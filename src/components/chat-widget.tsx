@@ -4,8 +4,8 @@ import { useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { getSystemContext } from "@/lib/context";
 
-export function ChatWidget() {
-    const [isOpen, setIsOpen] = useState(false);
+export function ChatWidget({ defaultOpen = false, projectId }: { defaultOpen?: boolean, projectId?: string }) {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
     const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -22,7 +22,9 @@ export function ChatWidget() {
                 method: "POST",
                 body: JSON.stringify({
                     messages: newMessages,
-                    context: getSystemContext()
+                    context: getSystemContext(),
+                    projectId,
+                    userId: "guest"
                 }),
             });
             const data = await res.json();
