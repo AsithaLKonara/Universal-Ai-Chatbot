@@ -17,11 +17,12 @@ export async function POST(req: Request) {
             messages: [
                 {
                     role: "system",
-                    content: `Concise. Knowledge: ${knowledge}. Context: ${JSON.stringify(context || {})}`
+                    content: `Concise assistant. Knowledge: ${knowledge}. Context: ${JSON.stringify(context || {})}`
                 },
                 ...messages.slice(-3),
             ],
             max_completion_tokens: 200,
+            temperature: 0.5,
         });
 
         const content = response.choices[0].message.content;
