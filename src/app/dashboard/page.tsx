@@ -1,77 +1,83 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Zap, Key, CreditCard, BarChart, Plus } from "lucide-react";
-import Link from "next/link";
+import { BarChart, Key, CreditCard, Plus, Command } from "lucide-react";
+import { NanoCard } from "@/components/ui-nano";
 
 export default function Dashboard() {
     const [data, setData] = useState<any>(null);
 
     useEffect(() => {
-        // Fetch user dashboard data
         fetch("/api/user/dashboard").then(r => r.json()).then(setData);
     }, []);
 
-    if (!data) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center">Loading...</div>;
+    if (!data) return <div className="min-h-screen bg-background flex flex-col items-center justify-center font-black animate-pulse opacity-20">BOOTING...</div>;
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white flex">
-            {/* Sidebar */}
-            <aside className="w-64 border-r border-white/5 p-6 space-y-8">
-                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Dashboard</h2>
-                <nav className="space-y-2 text-sm font-medium text-zinc-400">
-                    <Link href="/dashboard" className="flex items-center gap-3 p-3 bg-white/5 text-white rounded-xl"><BarChart size={18} /> Overview</Link>
-                    <Link href="/dashboard/keys" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl transition-all"><Key size={18} /> API Keys</Link>
-                    <Link href="/dashboard/billing" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl transition-all"><CreditCard size={18} /> Billing</Link>
+        <div className="min-h-screen bg-background flex">
+            <aside className="w-20 md:w-64 border-r border-border flex flex-col p-6 gap-6">
+                <div className="w-10 h-10 bg-foreground text-background rounded-full flex items-center justify-center font-black"><Command size={20} /></div>
+                <nav className="flex-1 flex flex-col gap-2">
+                    {[
+                        { icon: BarChart, label: "Metrics", active: true },
+                        { icon: Key, label: "Keys" },
+                        { icon: CreditCard, label: "Billing" }
+                    ].map((item, i) => (
+                        <button key={i} className={`p-4 rounded-2xl flex items-center gap-4 transition-all ${item.active ? "bg-foreground text-background" : "hover:bg-border opacity-50"}`}>
+                            <item.icon size={20} />
+                            <span className="hidden md:block text-xs font-black uppercase tracking-tighter">{item.label}</span>
+                        </button>
+                    ))}
                 </nav>
             </aside>
 
-            {/* Main content */}
-            <main className="flex-1 p-10 space-y-10">
+            <main className="flex-1 p-10 space-y-12">
                 <header className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-black tracking-tight">{data.user.email}</h1>
-                        <p className="text-zinc-500">Plan: <span className="text-blue-500 font-bold">{data.user.plan}</span></p>
+                        <h1 className="text-4xl font-black uppercase tracking-tightest">{data.user.email}</h1>
+                        <p className="opacity-40 text-xs font-bold uppercase tracking-widest mt-1">Tier: {data.user.plan}</p>
                     </div>
-                    <button className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all">
-                        <Plus size={18} /> New Project
+                    <button className="px-6 py-3 bg-accent text-white rounded-full font-black text-xs uppercase shadow-lg shadow-accent/20 flex items-center gap-2">
+                        <Plus size={16} /> New Entity
                     </button>
                 </header>
 
-                <section className="grid md:grid-cols-3 gap-6">
-                    <div className="p-8 rounded-3xl bg-white/5 border border-white/10">
-                        <h4 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Total Usage</h4>
-                        <div className="text-4xl font-black">{data.usage.total.toLocaleString()} <span className="text-sm font-medium opacity-40">Tokens</span></div>
-                        <div className="mt-4 h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500" style={{ width: `${(data.usage.total / data.usage.limit) * 100}%` }} />
-                        </div>
-                    </div>
-                    <div className="p-8 rounded-3xl bg-white/5 border border-white/10">
-                        <h4 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Active Projects</h4>
-                        <div className="text-4xl font-black">{data.projects.length}</div>
-                    </div>
-                    <div className="p-8 rounded-3xl bg-white/5 border border-white/10">
-                        <h4 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Requests / 24h</h4>
-                        <div className="text-4xl font-black">{data.usage.daily.toLocaleString()}</div>
-                    </div>
-                </section>
+                <div className="grid md:grid-cols-4 gap-4">
+                    {[
+                        { label: "Throughput", value: data.usage.total },
+                        { label: "Deployment Nodes", value: data.projects.length },
+                        { label: "Traffic / 24h", value: data.usage.daily },
+                        { label: "Saturation", value: `${Math.round((data.usage.total / data.usage.limit) * 100)}%` }
+                    ].map((s, i) => (
+                        <NanoCard key={i} className="p-6">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{s.label}</h4>
+                            <div className="text-2xl font-black">{s.value.toLocaleString()}</div>
+                        </NanoCard>
+                    ))}
+                </div>
 
-                <section className="space-y-4">
-                    <h3 className="text-xl font-bold">Recent Projects</h3>
-                    <div className="grid gap-4">
+                <div className="space-y-4">
+                    <h3 className="text-xs font-black uppercase tracking-widest opacity-20">Active Modules</h3>
+                    <div className="grid gap-2">
                         {data.projects.map((p: any) => (
-                            <div key={p.id} className="p-6 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between hover:border-white/20 transition-all">
-                                <div>
-                                    <h4 className="font-bold">{p.name}</h4>
-                                    <code className="text-xs text-zinc-500">{p.apiKey.slice(0, 10)}...</code>
+                            <div key={p.id} className="p-6 nano-glass rounded-3xl flex items-center justify-between border border-transparent hover:border-border transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-8 h-8 bg-border rounded-xl flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-colors"><Command size={14} /></div>
+                                    <div>
+                                        <h4 className="text-sm font-black uppercase tracking-tighter">{p.name}</h4>
+                                        <code className="text-[10px] opacity-30 font-bold">{p.apiKey}</code>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-sm font-bold">{p.tokens.toLocaleString()} tokens</div>
-                                    <div className="text-[10px] text-zinc-600">Created {new Date(p.createdAt).toLocaleDateString()}</div>
+                                <div className="flex items-center gap-8">
+                                    <div className="text-right">
+                                        <div className="text-xs font-black">{p.tokens.toLocaleString()}</div>
+                                        <div className="text-[10px] opacity-30 uppercase font-black tracking-widest">Tokens</div>
+                                    </div>
+                                    <button className="text-[10px] font-black uppercase tracking-widest opacity-20 hover:opacity-100 hover:text-red-500 transition-all">Destroy</button>
                                 </div>
                             </div>
                         ))}
                     </div>
-                </section>
+                </div>
             </main>
         </div>
     );

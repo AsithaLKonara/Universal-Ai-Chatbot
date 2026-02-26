@@ -1,87 +1,77 @@
+"use client";
+import { Navbar, Section, NanoCard } from "@/components/ui-nano";
 import { ChatWidget } from "@/components/chat-widget";
-import Link from "next/link";
-import { Zap, Shield, BarChart3, Rocket, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Cpu, Layers, ShieldCheck } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-white selection:bg-blue-500/30">
-      <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">OmniChat AI</div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href="#features" className="hover:text-white transition-colors">Features</Link>
-            <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
-            <Link href="/docs" className="hover:text-white transition-colors">Docs</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium hover:text-white transition-colors">Login</Link>
-            <Link href="/register" className="bg-white text-black text-sm font-bold px-4 py-2 rounded-full hover:bg-zinc-200 transition-all">Get Started</Link>
-          </div>
+    <div className="bg-background selection:bg-accent selection:text-white">
+      <Navbar />
+
+      <Section className="min-h-screen flex items-center nano-gradient">
+        <div className="max-w-4xl">
+          <motion.h1
+            initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            className="text-7xl md:text-9xl font-black tracking-tightest leading-[0.9] mb-8"
+          >
+            INTELLIGENCE <br /> <span className="opacity-20 italic">WITHOUT</span> LIMITS.
+          </motion.h1>
+          <motion.p
+            initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
+            className="text-xl md:text-2xl font-medium max-w-2xl opacity-50 mb-12 leading-tight"
+          >
+            Extreme-fidelity context-aware AI engine. Sub-second latency. Zero conflict.
+          </motion.p>
+          <motion.div
+            initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
+            className="flex gap-4"
+          >
+            <button className="px-10 py-5 bg-foreground text-background font-black text-sm uppercase tracking-tighter rounded-full flex items-center gap-2 group">
+              Acquire SDK <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </motion.div>
         </div>
-      </nav>
+      </Section>
 
-      <main>
-        <section className="pt-32 pb-20 px-6 text-center relative overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-500/10 blur-[120px] rounded-full -z-10" />
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6">Quantum Intelligence <br /> for <span className="text-blue-500">Universal Apps</span></h1>
-          <p className="text-zinc-500 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            Integrate context-aware AI in minutes. Professional glassmorphism,
-            semantic retrieval, and enterprise-grade scalability in a single SDK.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register" className="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 group transition-all">
-              Start Free Trial <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link href="/docs" className="bg-white/5 hover:bg-white/10 px-8 py-4 rounded-2xl font-bold border border-white/10 transition-all">
-              View Documentation
-            </Link>
-          </div>
-        </section>
-
-        <section id="features" className="py-20 px-6 max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
+      <Section id="features">
+        <div className="grid md:grid-cols-3 gap-6">
           {[
-            { icon: Zap, title: "Micro-latency", text: "Powered by Groq Llama 3 for sub-second AI responses." },
-            { icon: Shield, title: "Isolated Sandbox", text: "Shadow DOM injection ensures zero CSS conflicts." },
-            { icon: BarChart3, title: "Usage Metering", text: "Granular token tracking and real-time usage analytics." }
+            { icon: Cpu, label: "Core Execution", text: "Proprietary AI orchestration." },
+            { icon: Layers, label: "Neural Layering", text: "Isolated Shadow DOM architecture." },
+            { icon: ShieldCheck, label: "End-to-End", text: "Full spectrum security protocols." }
           ].map((f, i) => (
-            <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-white/20 transition-all">
-              <f.icon className="text-blue-500 mb-6" size={32} />
-              <h3 className="text-xl font-bold mb-3">{f.title}</h3>
-              <p className="text-zinc-500 leading-relaxed">{f.text}</p>
+            <NanoCard key={i} className="hover:border-accent transition-colors group">
+              <f.icon className="mb-8 opacity-40 group-hover:opacity-100 group-hover:text-accent transition-all" size={32} />
+              <h3 className="text-xl font-black uppercase tracking-tighter mb-2">{f.label}</h3>
+              <p className="opacity-50 text-sm font-medium leading-relaxed">{f.text}</p>
+            </NanoCard>
+          ))}
+        </div>
+      </Section>
+
+      <Section id="pricing" className="text-center">
+        <h2 className="text-5xl font-black uppercase tracking-tighter mb-20 opacity-20">Resource Allocation</h2>
+        <div className="grid md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+          {[
+            { tier: "Free", price: "0" },
+            { tier: "Professional", price: "29", active: true },
+            { tier: "Corporate", price: "99" }
+          ].map((p, i) => (
+            <div key={i} className={`p-10 rounded-3xl border-2 transition-all text-left ${p.active ? "border-accent bg-accent/5" : "border-border"}`}>
+              <h4 className="text-xs font-bold uppercase tracking-widest mb-4 opacity-50">{p.tier}</h4>
+              <div className="text-4xl font-black mb-8">${p.price}<span className="text-sm opacity-40">/MO</span></div>
+              <button className={`w-full py-4 rounded-full font-black text-xs uppercase tracking-tighter ${p.active ? "bg-accent text-white" : "border border-foreground"}`}>Select Plan</button>
             </div>
           ))}
-        </section>
+        </div>
+      </Section>
 
-        <section id="pricing" className="py-20 px-6 text-center">
-          <h2 className="text-4xl font-black mb-16">Simple Usage Plans</h2>
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {[
-              { name: "Free", price: "0", features: ["1,000 tokens/mo", "1 Project", "Basic Chat"], btn: "Start Free" },
-              { name: "Pro", price: "29", features: ["50,000 tokens/mo", "Unlimited Projects", "Context Awareness", "Vector Search"], btn: "Go Pro", highlight: true },
-              { name: "Enterprise", price: "99", features: ["1,000,000 tokens/mo", "SLA Support", "SSO & Audit Logs", "Custom Models"], btn: "Contact Sales" }
-            ].map((p, i) => (
-              <div key={i} className={cn("p-10 rounded-[32px] border text-left flex flex-col", p.highlight ? "bg-blue-600 border-blue-500" : "bg-white/5 border-white/10")}>
-                <h3 className="text-lg font-bold mb-2 opacity-80">{p.name}</h3>
-                <div className="text-4xl font-black mb-6">${p.price}<span className="text-sm font-medium opacity-60">/mo</span></div>
-                <div className="flex-1 space-y-4 mb-8">
-                  {p.features.map((f, fi) => <div key={fi} className="flex items-center gap-2 text-sm opacity-80"><Zap size={14} /> {f}</div>)}
-                </div>
-                <button className={cn("w-full py-4 rounded-2xl font-bold transition-all", p.highlight ? "bg-white text-black hover:bg-zinc-200" : "bg-white/10 hover:bg-white/20 border border-white/10")}>{p.btn}</button>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-
-      <footer className="py-20 border-t border-white/5 text-center text-zinc-600 text-sm">
-        &copy; 2025 OmniChat AI Corp. All rights reserved.
+      <footer className="py-20 px-6 border-t border-border text-center opacity-30 text-[10px] font-black uppercase tracking-widest">
+        &copy; 2025 OMNICHAT. SYSTEM ONLINE.
       </footer>
 
       <ChatWidget primaryColor="#3b82f6" />
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }

@@ -1,110 +1,80 @@
 "use client";
 import { useState } from "react";
-import { Copy, Terminal, Check } from "lucide-react";
+import { Copy, Terminal, Check, Command } from "lucide-react";
+import { NanoCard } from "@/components/ui-nano";
 
 export default function DocsPage() {
     const [copied, setCopied] = useState(false);
+    const copyCode = (t: string) => { navigator.clipboard.writeText(t); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
-    const copyCode = (txt: string) => {
-        navigator.clipboard.writeText(txt);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    const codeSamples = {
-        curl: `curl -X POST https://omnichat.ai/api/v1/chat \\
-  -H "x-api-key: YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "messages": [{ "role": "user", "content": "How do I integrate this?" }]
-  }'`,
-        js: `const response = await fetch("https://omnichat.ai/api/v1/chat", {
-  method: "POST",
-  headers: {
-    "x-api-key": "YOUR_API_KEY",
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    messages: [{ role: "user", content: "Hello!" }]
-  })
-});
-const data = await response.json();`,
+    const samples = {
+        curl: `curl -X POST https://api.omnichat.ai/v1/chat \\
+  -H "x-api-key: <KEY>" \\
+  -d '{"messages": [{"role": "user", "content": "Query"}]}'`
     };
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans p-10 max-w-5xl mx-auto">
-            <header className="mb-20">
-                <h1 className="text-4xl font-black mb-4">API Documentation</h1>
-                <p className="text-zinc-500 text-lg">Integrate the most powerful context-aware AI into your platform.</p>
+        <div className="min-h-screen bg-background text-foreground font-sans p-10 max-w-7xl mx-auto">
+            <header className="mb-32">
+                <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-black mb-10"><Command size={24} /></div>
+                <h1 className="text-7xl font-black tracking-tightest leading-none mb-6">PROTOCOLS.</h1>
+                <p className="text-xl opacity-40 font-medium max-w-xl uppercase tracking-tighter">System integration and interface specifications.</p>
             </header>
 
-            <div className="grid md:grid-cols-[1fr_350px] gap-16">
-                <div className="space-y-20">
+            <div className="grid md:grid-cols-[1fr_400px] gap-20">
+                <div className="space-y-32">
                     <section>
-                        <h2 className="text-2xl font-bold mb-6">Authentication</h2>
-                        <p className="text-zinc-500 mb-6 leading-relaxed">
-                            All API requests must include your project key in the <code className="bg-white/5 px-2 py-1 rounded text-blue-400">x-api-key</code> header.
-                            You can find your keys in the dashboard under the project settings.
-                        </p>
-                    </section>
-
-                    <section>
-                        <h2 className="text-2xl font-bold mb-6">Chat Completion <span className="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded ml-2 uppercase">Post</span></h2>
-                        <p className="text-zinc-500 mb-6 leading-relaxed">
-                            Send an array of messages to get an intelligent response based on your project's knowledge base.
-                        </p>
-                        <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden p-6">
-                            <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-4">Request Body</h4>
-                            <div className="space-y-4">
-                                <div className="flex justify-between border-b border-white/5 pb-2">
-                                    <span className="text-sm font-bold text-zinc-300">messages</span>
-                                    <span className="text-xs text-zinc-500 italic">Array (Required)</span>
-                                </div>
-                                <div className="flex justify-between border-b border-white/5 pb-2">
-                                    <span className="text-sm font-bold text-zinc-300">userId</span>
-                                    <span className="text-xs text-zinc-500 italic">String (Optional)</span>
-                                </div>
-                            </div>
+                        <h2 className="text-sm font-black uppercase tracking-[0.2em] opacity-30 mb-10">01 / Authentication</h2>
+                        <div className="space-y-6">
+                            <p className="text-lg font-medium leading-relaxed opacity-70">Requests must authenticate via the <code className="bg-border px-2 py-1 rounded">x-api-key</code> header. Unauthorized entities will be rejected with 401 status.</p>
                         </div>
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-bold mb-6">Error Codes</h2>
-                        <div className="grid gap-4">
-                            {[
-                                { code: 401, msg: "Unauthorized - API key missing or invalid." },
-                                { code: 402, msg: "Payment Required - Token limit reached." },
-                                { code: 429, msg: "Too Many Requests - Rate limit exceeded." }
-                            ].map((e, i) => (
-                                <div key={i} className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <span className="text-sm font-bold text-red-400">{e.code}</span>
-                                    <span className="text-sm text-zinc-500">{e.msg}</span>
+                        <h2 className="text-sm font-black uppercase tracking-[0.2em] opacity-30 mb-10">02 / Completion</h2>
+                        <div className="space-y-8">
+                            <div className="flex items-center gap-4 bg-accent/10 border border-accent/20 p-4 rounded-2xl w-fit">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-accent">Post</span>
+                                <span className="text-[10px] font-bold opacity-60">/v1/chat</span>
+                            </div>
+                            <p className="text-lg font-medium leading-relaxed opacity-70">Generates autonomous responses based on the neural knowledge index of the specific project module.</p>
+                            <NanoCard className="p-0 border-none overflow-hidden">
+                                <div className="bg-border/50 p-4 flex justify-between items-center">
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Schema</span>
                                 </div>
-                            ))}
+                                <div className="p-6 space-y-4">
+                                    {["messages (array)", "userId (string)"].map(item => (
+                                        <div key={item} className="flex justify-between border-b border-border pb-2">
+                                            <span className="text-xs font-black uppercase tracking-tighter">{item.split(" ")[0]}</span>
+                                            <span className="text-[10px] opacity-40 italic">{item.split(" ")[1]}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </NanoCard>
                         </div>
                     </section>
                 </div>
 
-                <aside className="sticky top-10 space-y-6">
-                    <div className="bg-zinc-900 border border-white/10 rounded-[24px] overflow-hidden shadow-2xl">
-                        <div className="p-4 border-b border-white/10 bg-white/5 flex justify-between items-center text-xs font-bold text-zinc-500 uppercase">
-                            <div className="flex items-center gap-2"><Terminal size={14} /> Example cURL</div>
-                            <button onClick={() => copyCode(codeSamples.curl)} className="hover:text-blue-500 transition-colors">
-                                {copied ? <Check size={14} /> : <Copy size={14} />}
+                <aside className="sticky top-10 flex flex-col gap-6">
+                    <div className="bg-foreground text-background rounded-[40px] p-8 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4">
+                            <button onClick={() => copyCode(samples.curl)} className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+                                {copied ? <Check size={16} /> : <Copy size={16} />}
                             </button>
                         </div>
-                        <pre className="p-6 text-xs leading-6 overflow-x-auto text-blue-300">
-                            {codeSamples.curl}
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-8 flex items-center gap-2">
+                            <Terminal size={12} /> Interaction Terminal
+                        </h4>
+                        <pre className="text-xs font-bold leading-relaxed overflow-x-auto selection:bg-white selection:text-black">
+                            {samples.curl}
                         </pre>
                     </div>
 
-                    <div className="p-6 bg-blue-600/10 border border-blue-500/20 rounded-[24px]">
-                        <h4 className="text-sm font-bold mb-2">SDK Integration</h4>
-                        <p className="text-xs text-zinc-500 leading-relaxed mb-4">
-                            We also offer a direct JS SDK which handles UI and context automatically.
-                        </p>
-                        <button className="w-full py-3 bg-blue-600 rounded-xl text-xs font-bold hover:bg-blue-500 transition-colors">Explore SDK</button>
-                    </div>
+                    <NanoCard className="border-accent/30 bg-accent/5">
+                        <h4 className="text-xs font-black uppercase tracking-widest mb-2 text-accent">Neural SDK</h4>
+                        <p className="text-xs font-bold opacity-50 mb-6 leading-relaxed">Direct Shadow DOM injection for web environments.</p>
+                        <button className="w-full py-4 bg-accent text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">Acquire Module</button>
+                    </NanoCard>
                 </aside>
             </div>
         </div>
