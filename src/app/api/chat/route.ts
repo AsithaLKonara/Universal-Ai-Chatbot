@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
     try {
-        const { messages, context, projectId } = await req.json();
+        const { messages, context, projectId, userId } = await req.json();
 
         let knowledge = "";
         if (projectId) {
@@ -24,7 +24,17 @@ export async function POST(req: Request) {
             max_completion_tokens: 200,
         });
 
-        return NextResponse.json({ content: response.choices[0].message.content });
+        const content = response.choices[0].message.content;
+        if (projectId && userId && content) {
+            await supabase.from("conversations").insert({
+                project_id: projectId,
+                user_id: userId,
+                message: messages[messages.length - 1].content,
+                response: content,
+            });
+        }
+
+        return NextResponse.json({ content });
     } catch (error) {
         return NextResponse.json({ error: "Failed to fetch AI response" }, { status: 500 });
     }
