@@ -4,38 +4,86 @@
   --color-brand: #000;
   --color-accent: #3b82f6;
   --font-sans: 'Inter', system-ui, sans-serif;
+  --animate-orbit: orbit 20s linear infinite;
+  --animate-border: border-flow 4s linear infinite;
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(100px) rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(100px) rotate(-360deg);
+  }
+}
+
+@keyframes border-flow {
+  0% {
+    border-image-source: linear-gradient(45deg, #3b82f6, #fff, #000);
+  }
+
+  50% {
+    border-image-source: linear-gradient(180deg, #000, #3b82f6, #fff);
+  }
+
+  100% {
+    border-image-source: linear-gradient(405deg, #3b82f6, #fff, #000);
+  }
 }
 
 :root {
   --background: #fff;
   --foreground: #000;
-  --glass: rgba(255, 255, 255, 0.7);
-  --border: rgba(0, 0, 0, 0.1);
+  --glass: rgba(255, 255, 255, 0.4);
 }
 
 .dark {
   --background: #000;
   --foreground: #fff;
-  --glass: rgba(0, 0, 0, 0.7);
-  --border: rgba(255, 255, 255, 0.1);
+  --glass: rgba(0, 0, 0, 0.4);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.moving-bg {
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, transparent 40%);
+  animation: orbit 30s linear infinite;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .nano-glass {
   background: var(--glass);
   backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
+  border-image: linear-gradient(to bottom right, #3b82f6, #fff, #000) 1;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
 }
 
-.nano-gradient {
-  background: radial-gradient(circle at top, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+.nano-card-glow {
+  position: relative;
 }
 
-.hide-scrollbar::-webkit-scrollbar { display: none; }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.nano-card-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(45deg, #3b82f6, #fff, #000);
+  background-size: 200% 200%;
+  animation: border-flow 6s linear infinite;
+  z-index: -1;
+  border-radius: inherit;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
