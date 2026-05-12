@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 export function useVideoScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
     const targetProgress = useRef(0);
     const currentProgress = useRef(0);
-    const animationFrameId = useRef<number>();
+    const animationFrameId = useRef<number>(0);
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {

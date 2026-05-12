@@ -1,5 +1,6 @@
 import { groq } from "../groq";
 import { getCustomerProfile } from "../memory";
+import { omniBus, OmniEvent } from "../events";
 
 export type RecoveryTriggerType = "hesitation" | "cart_abandonment" | "price_sensitivity";
 
