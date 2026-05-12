@@ -22,8 +22,16 @@ export enum OmniEvent {
 }
 
 let redis: Redis | null = null;
-if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    redis = Redis.fromEnv();
+if (
+    process.env.UPSTASH_REDIS_REST_URL && 
+    process.env.UPSTASH_REDIS_REST_URL.startsWith("https://") &&
+    process.env.UPSTASH_REDIS_REST_TOKEN
+) {
+    try {
+        redis = Redis.fromEnv();
+    } catch (e) {
+        console.warn("[EVENT] Failed to initialize Redis. Continuing without it.", e);
+    }
 }
 
 class OmniBus extends EventEmitter {
