@@ -1,50 +1,45 @@
+import { AsyncLocalStorage } from "async_hooks";
+import { trace } from "@opentelemetry/api";
+
+export const logContext = new AsyncLocalStorage<{ correlationId: string }>();
+
 type LogLevel = "info" | "warn" | "error" | "debug";
 
-export interface LogContext {
-    userId?: string;
-    sessionId?: string;
-    tool?: string;
-    action?: string;
-    error?: any;
-    [key: string]: any;
+function format(level: LogLevel, message: string, meta?: any) {
+    const context = logContext.getStore();
+    const correlationId = context?.correlationId || "system";
+    
+    // Extract OTel trace context
+    const span = trace.getActiveSpan();
+    const spanContext = span?.spanContext();
+    const traceId = spanContext?.traceId;
+    const spanId = spanContext?.spanId;
+
+    const entry = {
+        timestamp: new Date().toISOString(),
+        level,
+        correlationId,
+        traceId,
+        spanId,
+        message,
+        ...meta,
+    };
+
+    if (process.env.NODE_ENV === "production") {
+        return JSON.stringify(entry);
+    } else {
+        const color = level === "error" ? "\x1b[31m" : level === "warn" ? "\x1b[33m" : "\x1b[32m";
+        return `${color}[${level.toUpperCase()}]\x1b[0m [${correlationId}] ${message} ${meta ? JSON.stringify(meta) : ""}`;
+    }
 }
 
-class Logger {
-    private format(level: LogLevel, message: string, context?: LogContext) {
-        const payload = {
-            timestamp: new Date().toISOString(),
-            level,
-            message,
-            ...context,
-        };
-
-        if (context?.error instanceof Error) {
-            payload.error = {
-                message: context.error.message,
-                stack: context.error.stack,
-            };
-        }
-
-        return JSON.stringify(payload);
-    }
-
-    info(message: string, context?: LogContext) {
-        console.log(this.format("info", message, context));
-    }
-
-    warn(message: string, context?: LogContext) {
-        console.warn(this.format("warn", message, context));
-    }
-
-    error(message: string, context?: LogContext) {
-        console.error(this.format("error", message, context));
-    }
-
-    debug(message: string, context?: LogContext) {
+export const logger = {
+    info: (msg: string, meta?: any) => console.log(format("info", msg, meta)),
+    warn: (msg: string, meta?: any) => console.warn(format("warn", msg, meta)),
+    error: (msg: string, meta?: any) => console.error(format("error", msg, meta)),
+    debug: (msg: string, meta?: any) => {
         if (process.env.NODE_ENV !== "production") {
-            console.debug(this.format("debug", message, context));
+            console.debug(format("debug", msg, meta));
         }
-    }
-}
-
-export const logger = new Logger();
+    },
+};

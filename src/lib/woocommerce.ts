@@ -1,4 +1,5 @@
 import { createRedisClient } from "./redis";
+import { withIdempotency } from "./idempotency";
 
 export interface WooCommerceConfig {
     storeUrl: string;
@@ -132,40 +133,43 @@ export interface CreateOrderPayload {
 }
 
 export async function createOrder(payload: CreateOrderPayload, config: WooCommerceConfig, idempotencyKey?: string): Promise<WCOrder | null> {
-    if (idempotencyKey) {
-        const existing = await wcFetch<WCOrder[]>(
-            `/orders?meta_key=_omnichat_idempotency_key&meta_value=${idempotencyKey}`,
-            config
-        );
-        if (existing && existing.length > 0) return existing[0];
-    }
+    return await withIdempotency(idempotencyKey, "wc_order", async () => {
+        // Double-check with WooCommerce if the order exists via meta data
+        if (idempotencyKey) {
+            const existing = await wcFetch<WCOrder[]>(
+                `/orders?meta_key=_omnichat_idempotency_key&meta_value=${idempotencyKey}`,
+                config
+            );
+            if (existing && existing.length > 0) return existing[0];
+        }
 
-    const body = {
-        payment_method: payload.paymentMethod || "cod",
-        billing: {
-            first_name: payload.customer.name.split(" ")[0],
-            last_name: payload.customer.name.split(" ").slice(1).join(" ") || "-",
-            phone: payload.customer.phone,
-            email: payload.customer.email,
-            address_1: payload.customer.address,
-            city: payload.customer.city,
-            country: payload.customer.country,
-        },
-        shipping: {
-            first_name: payload.customer.name.split(" ")[0],
-            last_name: payload.customer.name.split(" ").slice(1).join(" ") || "-",
-            address_1: payload.customer.address,
-            city: payload.customer.city,
-            country: payload.customer.country,
-        },
-        line_items: payload.items.map(item => ({
-            product_id: item.productId,
-            quantity: item.quantity
-        })),
-        meta_data: idempotencyKey ? [{ key: "_omnichat_idempotency_key", value: idempotencyKey }] : [],
-    };
+        const body = {
+            payment_method: payload.paymentMethod || "cod",
+            billing: {
+                first_name: payload.customer.name.split(" ")[0],
+                last_name: payload.customer.name.split(" ").slice(1).join(" ") || "-",
+                phone: payload.customer.phone,
+                email: payload.customer.email,
+                address_1: payload.customer.address,
+                city: payload.customer.city,
+                country: payload.customer.country,
+            },
+            shipping: {
+                first_name: payload.customer.name.split(" ")[0],
+                last_name: payload.customer.name.split(" ").slice(1).join(" ") || "-",
+                address_1: payload.customer.address,
+                city: payload.customer.city,
+                country: payload.customer.country,
+            },
+            line_items: payload.items.map(item => ({
+                product_id: item.productId,
+                quantity: item.quantity
+            })),
+            meta_data: idempotencyKey ? [{ key: "_omnichat_idempotency_key", value: idempotencyKey }] : [],
+        };
 
-    return wcFetch<WCOrder>("/orders", config, { method: "POST", body: JSON.stringify(body) });
+        return wcFetch<WCOrder>("/orders", config, { method: "POST", body: JSON.stringify(body) });
+    });
 }
 
 export function formatOrderSummary(order: WCOrder): string {
@@ -177,4 +181,44 @@ export function formatOrderSummary(order: WCOrder): string {
         `Items:\n${items}`,
         `Shipping to: ${order.shipping.city}, ${order.shipping.country}`,
     ].join("\n");
+}
+
+// ─── Normalization & Enrichment ────────────────────────────────────────────────
+
+export interface NormalizedProduct {
+    id: string;
+    sourceId: number;
+    name: string;
+    description: string;
+    price: number;
+    formattedPrice: string;
+    currency: string;
+    imageUrl: string;
+    inStock: boolean;
+    stockQuantity: number;
+    url: string;
+    attributes: Record<string, string>;
+}
+
+export function normalizeWCProduct(p: WCProduct): NormalizedProduct {
+    return {
+        id: `wc_${p.id}`,
+        sourceId: p.id,
+        name: p.name,
+        description: p.short_description.replace(/<[^>]*>?/gm, ""), // Strip HTML
+        price: parseFloat(p.price),
+        formattedPrice: `$${p.price}`,
+        currency: "USD",
+        imageUrl: p.images?.[0]?.src || "",
+        inStock: p.stock_status === "instock",
+        stockQuantity: p.stock_quantity ?? 0,
+        url: p.permalink,
+        attributes: {} // Could be expanded to include WC attributes
+    };
+}
+
+export async function getEnrichedProduct(productId: number, config: WooCommerceConfig): Promise<NormalizedProduct | null> {
+    const product = await getProduct(productId, config);
+    if (!product) return null;
+    return normalizeWCProduct(product);
 }

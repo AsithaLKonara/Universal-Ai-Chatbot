@@ -10,6 +10,8 @@ datasource db {
 enum Role {
   USER
   ADMIN
+  OWNER
+  MEMBER
 }
 
 enum Plan {
@@ -20,10 +22,15 @@ enum Plan {
 
 model User {
   id            String    @id @default(cuid())
+  name          String?
   email         String    @unique
   password      String
+  phone         String?   @unique
   role          Role      @default(USER)
   plan          Plan      @default(FREE)
+  emailVerified DateTime?
+  phoneVerified DateTime?
+  verificationCode String?
   stripeId      String?   @unique
   projects      Project[]
   createdAt     DateTime  @default(now())
@@ -59,6 +66,13 @@ model Project {
   checkoutSessions CheckoutSession[]
   carts         Cart[]
   
+  // Safety Policies
+  maxDiscount        Float   @default(0.20)
+  maxQuantity        Int     @default(10)
+  requireApproval    Boolean @default(false)
+  confirmationRequired String[] @default(["checkout_start", "order_create", "apply_discount"])
+  restrictedTools     String[] @default(["delete_customer", "override_price"])
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -156,4 +170,16 @@ model EmbeddingCache {
   text      String   @unique
   embedding Float[]
   createdAt DateTime @default(now())
+}
+
+model SystemEvent {
+  id         String   @id @default(cuid())
+  projectId  String
+  sessionId  String?
+  sequenceId Int      @default(0)
+  type       String
+  payload    Json
+  timestamp  DateTime @default(now())
+
+  @@index([projectId, sessionId, sequenceId])
 }

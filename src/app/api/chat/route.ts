@@ -25,6 +25,8 @@ import { trackActivity } from "@/lib/sales/session";
 import { supervisorRoute, AgentContext } from "@/lib/agents/supervisor";
 import { runSalesAgent } from "@/lib/agents/sales-agent";
 import { evaluateConfidence } from "@/lib/commerce/confidence";
+import { ChatRequestSchema } from "@/lib/validation";
+import { projectContext } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +145,7 @@ async function runTool(
     }
 }
 
+
 export async function POST(req: Request) {
     try {
         if (ratelimit) {
@@ -151,14 +154,21 @@ export async function POST(req: Request) {
             if (!success) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
         }
 
-        const { message, messages = [], projectId, userId = "guest" } = await req.json();
-        if (!projectId) return NextResponse.json({ error: "Project ID required" }, { status: 400 });
+        const body = await req.json();
+        const validation = ChatRequestSchema.safeParse(body);
+        
+        if (!validation.success) {
+            return NextResponse.json({ error: "Invalid request", details: validation.error.format() }, { status: 400 });
+        }
 
-        const project = await prisma.project.findUnique({ where: { id: projectId } });
-        if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+        const { message, messages = [], projectId, userId } = validation.data;
 
-        const userMessage = message || messages[messages.length - 1]?.content;
-        if (!userMessage) return NextResponse.json({ error: "Message required" }, { status: 400 });
+        return await projectContext.run({ projectId }, async () => {
+            const project = await prisma.project.findUnique({ where: { id: projectId } });
+            if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
+            const userMessage = message || messages[messages.length - 1]?.content;
+            if (!userMessage) return NextResponse.json({ error: "Message required" }, { status: 400 });
 
         // Intent detection
         const intentResult = await detectIntent(userMessage);
@@ -249,12 +259,12 @@ export async function POST(req: Request) {
             });
         }
 
-        return NextResponse.json({ 
-            content: responseContent,
-            data: toolResult.data,
-            intent: intentResult.intent
+            return NextResponse.json({ 
+                content: responseContent,
+                data: toolResult.data,
+                intent: intentResult.intent
+            });
         });
-
     } catch (error) {
         console.error("Internal API error:", error);
         return NextResponse.json({ error: "Internal Error" }, { status: 500 });

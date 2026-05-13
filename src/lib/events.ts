@@ -1,5 +1,8 @@
 import { EventEmitter } from "events";
 import { createRedisClient } from "./redis";
+import { enqueueEvent } from "./events/queue";
+import { projectContext } from "./prisma";
+import { logSystemEvent } from "./events/replay";
 
 export enum OmniEvent {
     CART_UPDATED = "cart.updated",
@@ -39,18 +42,43 @@ class OmniBus extends EventEmitter {
     }
 
     public async emitOmni(event: OmniEvent, payload: any) {
-        console.log(`[EVENT] ${event}`, payload);
+        const context = projectContext.getStore();
+        const projectId = context?.projectId || payload.projectId;
+        const sessionId = payload.sessionId;
+
+        console.log(`[EVENT] ${event}`, { ...payload, projectId, sessionId });
         
         // Local in-memory emission
         this.emit(event, payload);
 
-        // Global emission via Redis
+        // Persistent System Event Log (Replay-ready)
+        if (projectId) {
+            try {
+                await logSystemEvent({
+                    projectId,
+                    sessionId,
+                    type: event,
+                    payload
+                });
+            } catch (err) {
+                console.error(`[EVENT] Failed to log system event ${event}`, err);
+            }
+        }
+
+        // Global emission via Redis Pub/Sub
         if (redis) {
             try {
-                await redis.publish("omnichat:events", JSON.stringify({ event, payload, timestamp: Date.now() }));
+                await redis.publish("omnichat:events", JSON.stringify({ event, payload, projectId, sessionId, timestamp: Date.now() }));
             } catch (err) {
-                console.error(`[EVENT] Failed to publish ${event} to Redis`, err);
+                console.error(`[EVENT] Failed to publish ${event} to Redis Pub/Sub`, err);
             }
+        }
+
+        // Reliable emission via BullMQ
+        try {
+            await enqueueEvent(event, { ...payload, projectId, sessionId });
+        } catch (err) {
+            console.error(`[EVENT] Failed to enqueue ${event} to BullMQ`, err);
         }
     }
 }

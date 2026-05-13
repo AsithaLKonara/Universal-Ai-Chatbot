@@ -1,6 +1,7 @@
 import { logger } from "./logger";
 import { PlanStep, ExecutionPlan } from "./planner";
-import { validateAction, getRiskLevel, DEFAULT_POLICY } from "./safety";
+import { validateAction, getRiskLevel, DEFAULT_POLICY, SafetyPolicy } from "./safety";
+import { prisma, projectContext } from "./prisma";
 
 export interface ValidationResult {
     approved: boolean;
@@ -15,6 +16,24 @@ export class ExecutionSupervisor {
             goal: plan.goal,
             steps: plan.steps.length 
         });
+
+        const context = projectContext.getStore();
+        const projectId = context?.projectId;
+        let policy: SafetyPolicy = DEFAULT_POLICY;
+
+        if (projectId) {
+            const project = await prisma.project.findUnique({
+                where: { id: projectId },
+                select: {
+                    maxDiscount: true,
+                    maxQuantity: true,
+                    requireApproval: true,
+                    confirmationRequired: true,
+                    restrictedTools: true
+                }
+            });
+            if (project) policy = project as SafetyPolicy;
+        }
         
         const modifiedSteps: PlanStep[] = [];
 
@@ -25,7 +44,7 @@ export class ExecutionSupervisor {
                 goal: plan.goal
             };
 
-            const safety = await validateAction(step.tool, step.args);
+            const safety = await validateAction(step.tool, step.args, policy);
             if (!safety.valid) {
                 logger.error(`[REASONING] ❌ BLOCKED: ${step.tool}`, { 
                     ...auditContext, 
@@ -34,7 +53,6 @@ export class ExecutionSupervisor {
                 return { approved: false, reason: safety.reason };
             }
 
-            const policy = DEFAULT_POLICY;
             if (policy.confirmationRequired.includes(step.tool)) {
                 if (!step.args.confirmed) {
                     logger.warn(`[REASONING] ⚠️ PENDING CONFIRMATION: ${step.tool}`, auditContext);
@@ -58,10 +76,26 @@ export class ExecutionSupervisor {
     }
 
     public static async verifyOutput(tool: string, output: any): Promise<boolean> {
-        if (tool === "cart_add" && !output.cart) {
-            logger.warn(`[SUPERVISOR] Output verification failed for ${tool}`);
-            return false;
+        if (tool === "cart_add") {
+            if (!output.cart) {
+                logger.warn(`[SUPERVISOR] Output verification failed for ${tool}: Missing cart data.`);
+                return false;
+            }
+            // Ensure added product exists and has a price
+            if (output.cart.items?.some((i: any) => !i.productId || i.price === undefined)) {
+                logger.error(`[SUPERVISOR] Output verification failed for ${tool}: Invalid cart items.`);
+                return false;
+            }
         }
+
+        if (tool === "product_search" && output.products) {
+            // Check for hallucinated products (e.g. products with no ID)
+            if (output.products.some((p: any) => !p.id)) {
+                logger.error(`[SUPERVISOR] Hallucinated product detected in search results.`);
+                return false;
+            }
+        }
+
         return true;
     }
 }
