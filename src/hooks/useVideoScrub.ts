@@ -1,70 +1,67 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 /**
- * A custom hook to sync a video's currentTime with the page's scroll position.
- * Uses requestAnimationFrame and linear interpolation (lerp) for cinematic smoothness.
+ * Cinematic video scrub hook.
+ *
+ * Key design decisions for maximum smoothness:
+ * 1. Reads window.scrollY directly inside the rAF loop — avoids timing drift
+ *    between Lenis virtual scroll and DOM scroll events.
+ * 2. Checks video.readyState each frame — eliminates stale-closure bugs
+ *    that prevented currentTime from ever being set.
+ * 3. Compares video.currentTime against the lerped target to gate seeks —
+ *    avoids issuing redundant seeks on static frames.
+ * 4. Single stable effect with no state — zero re-renders, maximum fps.
  */
 export function useVideoScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
     const targetProgress = useRef(0);
     const currentProgress = useRef(0);
-    const animationFrameId = useRef<number>(0);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const animFrameId = useRef<number>(0);
 
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
 
-        // Ensure video doesn't play naturally
-        video.pause();
+        // Hard-block any natural playback
+        const blockPlay = () => { video.pause(); };
+        video.addEventListener("play", blockPlay);
 
-        const handleLoadedMetadata = () => {
-            setIsLoaded(true);
-            video.pause(); // Double ensure
-        };
+        let lastScrollY = -1;
 
-        if (video.readyState >= 1) {
-            setIsLoaded(true);
-        } else {
-            video.addEventListener("loadedmetadata", handleLoadedMetadata);
-        }
+        const tick = () => {
+            // Read scroll position every frame (works correctly with Lenis)
+            const scrollY = window.scrollY;
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
 
-        const handleScroll = () => {
-            // Calculate how far down the page we are (0.0 to 1.0)
-            const scrollTop = window.scrollY;
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            
-            if (docHeight > 0) {
-                targetProgress.current = Math.min(Math.max(scrollTop / docHeight, 0), 1);
+            if (maxScroll > 0 && scrollY !== lastScrollY) {
+                targetProgress.current = Math.min(Math.max(scrollY / maxScroll, 0), 1);
+                lastScrollY = scrollY;
             }
-        };
 
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        handleScroll(); // Init immediately
+            // Lerp: smooth glide toward target (0.1 = cinematic, 0.2 = snappier)
+            const diff = targetProgress.current - currentProgress.current;
+            currentProgress.current += diff * 0.1;
 
-        const renderLoop = () => {
-            // Lerp formula: current += (target - current) * friction
-            currentProgress.current += (targetProgress.current - currentProgress.current) * 0.08;
-
-            if (video && isLoaded && !isNaN(video.duration) && video.duration > 0) {
-                // Prevent micro-stutters by only updating if the difference is significant
-                if (Math.abs(targetProgress.current - currentProgress.current) > 0.0001) {
-                    video.currentTime = currentProgress.current * video.duration;
+            // Apply to video only when metadata is available and change is meaningful
+            if (
+                video.readyState >= 1 &&
+                !isNaN(video.duration) &&
+                video.duration > 0
+            ) {
+                const targetTime = currentProgress.current * video.duration;
+                // Gate: avoid micro-seeks that cause browser stuttering
+                if (Math.abs(video.currentTime - targetTime) > 0.01) {
+                    video.currentTime = targetTime;
                 }
             }
 
-            animationFrameId.current = requestAnimationFrame(renderLoop);
+            animFrameId.current = requestAnimationFrame(tick);
         };
 
-        renderLoop();
+        animFrameId.current = requestAnimationFrame(tick);
 
         return () => {
-            window.removeEventListener("scroll", handleScroll);
-            if (animationFrameId.current) {
-                cancelAnimationFrame(animationFrameId.current);
-            }
-            video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+            cancelAnimationFrame(animFrameId.current);
+            video.removeEventListener("play", blockPlay);
         };
-    }, [videoRef, isLoaded]);
-
-    return { isLoaded };
+    }, [videoRef]);
 }

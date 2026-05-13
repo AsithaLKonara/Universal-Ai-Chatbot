@@ -10,7 +10,7 @@ import { useVideoScrub } from "@/hooks/useVideoScrub";
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { isLoaded } = useVideoScrub(videoRef);
+  useVideoScrub(videoRef);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { scrollYProgress } = useScroll({
@@ -21,7 +21,9 @@ export default function Home() {
   // Lenis Smooth Scrolling Setup
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.2,
+      // Keep duration low so Lenis scroll position reaches the target quickly,
+      // which in turn allows the video scrub rAF loop to read accurate scrollY.
+      duration: 0.8,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
@@ -51,7 +53,8 @@ export default function Home() {
           muted
           playsInline
           preload="auto"
-          // We don't loop or autoplay; the scroll hook controls playback
+          // Safari: must be muted + playsInline for any JS control to work
+          webkit-playsinline="true"
         />
         {/* Cinematic Dark Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80 mix-blend-multiply" />
