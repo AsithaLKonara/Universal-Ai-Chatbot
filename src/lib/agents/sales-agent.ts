@@ -14,7 +14,7 @@ export async function runSalesAgent(
     const dynamicSystemPrompt = assembleSystemPrompt({
         customer: profile,
         cart,
-        channel: "web",
+        channel: context.channel,
         strategy
     });
 

@@ -58,7 +58,9 @@ export interface CustomerProfile {
     name?: string | null;
     email?: string | null;
     lastOrderId?: string | null;
-    preferences?: CustomerPreferences | any;
+    address?: string | null;
+    city?: string | null;
+    preferences?: CustomerPreferences;
     createdAt?: Date;
 }
 

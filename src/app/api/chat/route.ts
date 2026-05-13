@@ -1,32 +1,10 @@
-import { groq } from "@/lib/groq";
-import { prisma } from "@/lib/prisma";
-import { getHistory, saveMessage, getCustomerProfile, upsertCustomerProfile } from "@/lib/memory";
-import { searchKnowledge } from "@/lib/knowledge";
-import { detectIntent } from "@/lib/intent";
-import {
-    searchProducts,
-    getProduct,
-    getOrder,
-    formatOrderSummary,
-} from "@/lib/woocommerce";
-import { Ratelimit } from "@upstash/ratelimit";
 import { createRedisClient } from "@/lib/redis";
 import { NextResponse } from "next/server";
-import { getCart, addToCart, clearCart } from "@/lib/cart";
-import { getOrCreateCheckout } from "@/lib/checkout";
-import { createExecutionPlan } from "@/lib/planner";
-import { ExecutionSupervisor } from "@/lib/supervisor";
-import { assembleSystemPrompt } from "@/lib/prompts";
-import { reflectOnInteraction } from "@/lib/reflection";
-import { evaluateStrategy } from "@/lib/strategy";
-import { getGoalDirective } from "@/lib/goals";
-import { generateProductComparison } from "@/lib/commerce/comparison";
-import { trackActivity } from "@/lib/sales/session";
-import { supervisorRoute, AgentContext } from "@/lib/agents/supervisor";
-import { runSalesAgent } from "@/lib/agents/sales-agent";
-import { evaluateConfidence } from "@/lib/commerce/confidence";
+import { Ratelimit } from "@upstash/ratelimit";
 import { ChatRequestSchema } from "@/lib/validation";
-import { projectContext } from "@/lib/prisma";
+import { OrchestratorService } from "@/lib/services/orchestrator";
+import { withObservability } from "@/lib/middleware/observability";
+import { logContext } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -147,126 +125,39 @@ async function runTool(
 
 
 export async function POST(req: Request) {
-    try {
-        if (ratelimit) {
-            const ip = req.headers.get("x-forwarded-for") ?? "anon";
-            const { success } = await ratelimit.limit(ip);
-            if (!success) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-        }
+    const correlationId = req.headers.get("x-correlation-id");
 
-        const body = await req.json();
-        const validation = ChatRequestSchema.safeParse(body);
-        
-        if (!validation.success) {
-            return NextResponse.json({ error: "Invalid request", details: validation.error.format() }, { status: 400 });
-        }
+    return await withObservability(correlationId, async () => {
+        try {
+            if (ratelimit) {
+                const ip = req.headers.get("x-forwarded-for") ?? "anon";
+                const { success } = await ratelimit.limit(ip);
+                if (!success) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+            }
 
-        const { message, messages = [], projectId, userId } = validation.data;
+            const body = await req.json();
+            const validation = ChatRequestSchema.safeParse(body);
+            
+            if (!validation.success) {
+                return NextResponse.json({ error: "Invalid request", details: validation.error.format() }, { status: 400 });
+            }
 
-        return await projectContext.run({ projectId }, async () => {
-            const project = await prisma.project.findUnique({ where: { id: projectId } });
-            if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+            const { message, messages = [], projectId, userId } = validation.data;
+            const sessionId = "web_session"; 
 
-            const userMessage = message || messages[messages.length - 1]?.content;
-            if (!userMessage) return NextResponse.json({ error: "Message required" }, { status: 400 });
-
-        // Intent detection
-        const intentResult = await detectIntent(userMessage);
-        
-        // Tool execution (simplified for this port)
-        let toolResult = await runTool(intentResult, userMessage, project, userId);
-
-        const [history, knowledge, cart, profile] = await Promise.all([
-            getHistory(projectId, null, userId),
-            searchKnowledge(userMessage, projectId),
-            getCart(projectId, userId),
-            getCustomerProfile(projectId, userId) // userId as phone/identifier for now
-        ]);
-
-        const checkout = await getOrCreateCheckout(projectId, userId, cart.id);
-
-        const wcConfig = {
-            storeUrl: project.wooCommerceStoreUrl || "",
-            consumerKey: project.wooCommerceKey || "",
-            consumerSecret: project.wooCommerceSecret || "",
-        };
-
-        // Decision Confidence Check
-        const confidence = await evaluateConfidence(userMessage, history);
-        let responseContent = "";
-
-        if (confidence.score < 0.6 && confidence.missingInformation.length > 0) {
-            console.log(`[CONFIDENCE] Low confidence (${confidence.score}). Asking for clarification.`);
-            responseContent = `I want to make sure I get this exactly right for you. Could you clarify: ${confidence.missingInformation.join(", ")}?`;
-            await saveMessage(projectId, null, userId, userMessage, responseContent);
-            return NextResponse.json({ content: responseContent, intent: "clarification_request" });
-        }
-
-        const agentContext: AgentContext = {
-            userMessage,
-            history,
-            cart,
-            profile,
-            wcConfig
-        };
-
-        // Multi-Agent Routing
-        const routedAgent = await supervisorRoute(agentContext);
-        console.log(`[ORCHESTRATOR] Routing message to: ${routedAgent}`);
-
-        if (routedAgent === "sales" || routedAgent === "comparison") {
-            responseContent = await runSalesAgent(agentContext, toolResult.text);
-        } else {
-            // Fallback General Agent
-            const strategy = evaluateStrategy(profile || undefined, cart);
-            const dynamicSystemPrompt = assembleSystemPrompt({
-                customer: profile || undefined,
-                cart,
-                checkout,
+            const result = await OrchestratorService.process({
+                projectId,
+                userId,
+                sessionId,
                 channel: "web",
-                strategy
+                message: message || messages[messages.length - 1]?.content || "",
+                metadata: { correlationId: (logContext.getStore() as any)?.correlationId }
             });
 
-            const systemContent = [
-                dynamicSystemPrompt,
-                getGoalDirective(),
-                history.length ? `History:\n${history.map(e => `User: ${e.message}\nAssistant: ${e.response}`).join("\n")}` : "",
-                knowledge.length ? `Knowledge:\n${knowledge.join("\n")}` : "",
-                toolResult.text ? `Tool result (${intentResult.intent}):\n${toolResult.text}` : "",
-            ].filter(Boolean).join("\n\n");
-
-            const completion = await groq.chat.completions.create({
-                model: "llama-3.3-70b-versatile",
-                messages: [{ role: "system", content: systemContent }, ...messages.slice(-5), { role: "user", content: userMessage }],
-                max_completion_tokens: 500,
-                temperature: 0.7,
-            });
-
-            responseContent = completion.choices[0]?.message?.content || "";
+            return NextResponse.json(result);
+        } catch (error) {
+            console.error("Internal API error:", error);
+            return NextResponse.json({ error: "Internal Error" }, { status: 500 });
         }
-
-        await saveMessage(projectId, null, userId, userMessage, responseContent);
-
-        // Run reflection and update memory
-        const reflection = await reflectOnInteraction(userMessage, responseContent, history);
-        if (reflection?.learned_preferences) {
-            const currentPrefs = profile?.preferences || {};
-            await upsertCustomerProfile(projectId, userId, {
-                preferences: {
-                    ...currentPrefs,
-                    ...reflection.learned_preferences
-                }
-            });
-        }
-
-            return NextResponse.json({ 
-                content: responseContent,
-                data: toolResult.data,
-                intent: intentResult.intent
-            });
-        });
-    } catch (error) {
-        console.error("Internal API error:", error);
-        return NextResponse.json({ error: "Internal Error" }, { status: 500 });
-    }
+    });
 }

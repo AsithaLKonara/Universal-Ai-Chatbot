@@ -2,12 +2,15 @@ import { groq } from "../groq";
 
 export type AgentRole = "sales" | "support" | "comparison" | "general";
 
+import { Channel } from "../services/orchestrator/types";
+
 export interface AgentContext {
     userMessage: string;
     history: any[];
     cart: any;
     profile: any;
     wcConfig: any;
+    channel: Channel;
 }
 
 export async function supervisorRoute(context: AgentContext): Promise<AgentRole> {

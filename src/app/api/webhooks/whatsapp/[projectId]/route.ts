@@ -7,16 +7,8 @@ import {
     sendWhatsAppMessage,
 } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
-import { detectIntent } from "@/lib/intent";
-import { getHistory, saveMessage, getCustomerProfile, upsertCustomerProfile, buildCustomerContext } from "@/lib/memory";
-import { getCart } from "@/lib/cart";
-import { searchKnowledge } from "@/lib/knowledge";
-import {
-    searchProducts,
-    getOrder,
-    formatOrderSummary,
-} from "@/lib/woocommerce";
-import { groq } from "@/lib/groq";
+import { OrchestratorService } from "@/lib/services/orchestrator";
+import { withObservability } from "@/lib/middleware/observability";
 
 export const dynamic = "force-dynamic";
 
@@ -78,44 +70,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ project
 async function processMessage(projectId: string, inbound: any, config: any): Promise<void> {
     const { from, text } = inbound;
     const sessionId = `wa:${from}`;
+    const correlationId = `wa:${projectId}:${from}:${Date.now()}`;
 
-    try {
-        const [profile, history, knowledge, intent] = await Promise.all([
-            getCustomerProfile(projectId, from),
-            getHistory(projectId, sessionId, from),
-            searchKnowledge(text, projectId),
-            detectIntent(text),
-        ]);
+    return await withObservability(correlationId, async () => {
+        try {
+            const result = await OrchestratorService.process({
+                projectId,
+                userId: from,
+                sessionId,
+                channel: "whatsapp",
+                message: text,
+                metadata: { correlationId }
+            });
 
-        let toolResult = "";
-        if (intent.intent === "product_search") {
-            const products = await searchProducts(intent.entities.product_query || text, config.wooCommerceConfig);
-            toolResult = products.length ? products.map(p => `${p.name} - ${p.price}`).join("\n") : "No products found.";
-        } else if (intent.intent === "order_status" && intent.entities.order_id) {
-            const order = await getOrder(intent.entities.order_id, config.wooCommerceConfig);
-            toolResult = order ? formatOrderSummary(order) : "Order not found.";
+            await sendWhatsAppMessage(from, result.content, config);
+        } catch (err) {
+            logger.error("[WHATSAPP] Failed to process message via orchestrator", { error: err, from, projectId });
+            await sendWhatsAppMessage(from, "I'm sorry, I'm having trouble processing your request right now.", config);
         }
-
-        const systemContent = `You are OmniChat AI on WhatsApp for project ${projectId}.
-${buildCustomerContext(profile)}
-${toolResult ? `Tool Result: ${toolResult}` : ""}`;
-
-        const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-                { role: "system", content: systemContent },
-                { role: "user", content: text },
-            ],
-        });
-
-        const reply = completion.choices[0]?.message?.content || "Sorry, I couldn't process that.";
-
-        await Promise.all([
-            sendWhatsAppMessage(from, reply, config),
-            saveMessage(projectId, sessionId, from, text, reply),
-            upsertCustomerProfile(projectId, from, {}),
-        ]);
-    } catch (err) {
-        console.error("processMessage error:", err);
-    }
+    });
 }

@@ -2,6 +2,7 @@ import { Worker, Job, ConnectionOptions } from "bullmq";
 import { OmniEvent } from "../events";
 import { logger } from "../logger";
 import { alerts } from "../observability/alerts";
+import { withEventIdempotency } from "../events/idempotency";
 
 const connection: ConnectionOptions = {
     host: process.env.REDIS_HOST || "localhost",
@@ -24,7 +25,9 @@ if (process.env.NEXT_PHASE !== "phase-production-build" && typeof window === "un
             });
 
             try {
-                await handleEvent(eventName, payload);
+                await withEventIdempotency(job.id || "unknown", "worker_event", async () => {
+                    await handleEvent(eventName, payload);
+                });
             } catch (err) {
                 logger.error(`[WORKER] Event handler failed: ${eventName}`, { 
                     jobId: job.id, 
@@ -57,7 +60,6 @@ if (process.env.NEXT_PHASE !== "phase-production-build" && typeof window === "un
 }
 
 async function handleEvent(event: OmniEvent, payload: any) {
-    // Implement event-specific logic here
     switch (event) {
         case OmniEvent.ANALYTICS_TRACK:
             // Process analytics asynchronously

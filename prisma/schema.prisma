@@ -106,6 +106,8 @@ model Cart {
   subtotal   Float      @default(0)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+
+  @@index([projectId, status])
 }
 
 model CartItem {
@@ -133,6 +135,9 @@ model CheckoutSession {
   status       String   @default("pending")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([projectId, status])
+  @@index([projectId, stage])
 }
 
 model Usage {
@@ -141,6 +146,8 @@ model Usage {
   project   Project  @relation(fields: [projectId], references: [id])
   tokens    Int
   timestamp DateTime @default(now())
+
+  @@index([projectId, timestamp])
 }
 
 model Knowledge {
@@ -180,6 +187,9 @@ model SystemEvent {
   type       String
   payload    Json
   timestamp  DateTime @default(now())
+  externalId String?  @unique
 
   @@index([projectId, sessionId, sequenceId])
+  @@index([externalId])
+  @@index([type])
 }

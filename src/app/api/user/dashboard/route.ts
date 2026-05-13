@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { AnalyticsService } from "@/lib/services/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -35,13 +36,17 @@ export async function GET(req: Request) {
             orderBy: { createdAt: "desc" },
         });
 
-        const projectsWithStats = projects.map((p) => ({
-            id: p.id,
-            name: p.name,
-            apiKey: p.apiKey,
-            conversations: p._count.conversations,
-            tokens: p.usage.reduce((sum, u) => sum + u.tokens, 0),
-            createdAt: p.createdAt,
+        const projectsWithStats = await Promise.all(projects.map(async (p) => {
+            const commerce = await AnalyticsService.getProjectStats(p.id);
+            return {
+                id: p.id,
+                name: p.name,
+                apiKey: p.apiKey,
+                conversations: p._count.conversations,
+                tokens: p.usage.reduce((sum, u) => sum + u.tokens, 0),
+                createdAt: p.createdAt,
+                commerce
+            };
         }));
 
         const allUsage = await prisma.usage.findMany({

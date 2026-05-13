@@ -19,38 +19,41 @@ function authHeaders(config: WooCommerceConfig): Record<string, string> {
     };
 }
 
+import { withChaos } from "./chaos";
+
 async function wcFetch<T>(path: string, config: WooCommerceConfig, options?: RequestInit, retries = 3): Promise<T | null> {
     if (!config.storeUrl || !config.consumerKey) return null;
     
-    let lastError: any;
-    for (let i = 0; i < retries; i++) {
-        try {
-            const res = await fetch(`${config.storeUrl}/wp-json/wc/v3${path}`, {
-                ...options,
-                headers: { ...authHeaders(config), ...(options?.headers ?? {}) },
-            });
+    return await withChaos("woocommerce", async () => {
+        let lastError: any;
+        for (let i = 0; i < retries; i++) {
+            try {
+                const res = await fetch(`${config.storeUrl}/wp-json/wc/v3${path}`, {
+                    ...options,
+                    headers: { ...authHeaders(config), ...(options?.headers ?? {}) },
+                });
 
-            if (res.ok) {
-                return (await res.json()) as T;
-            }
-
-            if (res.status >= 400 && res.status < 500) {
-                if (res.status !== 429) {
-                    console.error(`[WooCommerce] Client Error ${path} → ${res.status}`);
-                    return null;
+                if (res.ok) {
+                    return (await res.json()) as T;
                 }
-            }
-            lastError = new Error(`HTTP ${res.status}`);
-        } catch (err) {
-            lastError = err;
-        }
-        
-        if (i < retries - 1) {
-            await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
-        }
-    }
 
-    return null;
+                if (res.status >= 400 && res.status < 500) {
+                    if (res.status !== 429) {
+                        console.error(`[WooCommerce] Client Error ${path} → ${res.status}`);
+                        return null;
+                    }
+                }
+                lastError = new Error(`HTTP ${res.status}`);
+            } catch (err) {
+                lastError = err;
+            }
+            
+            if (i < retries - 1) {
+                await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+            }
+        }
+        return null;
+    });
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
