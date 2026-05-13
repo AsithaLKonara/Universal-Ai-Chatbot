@@ -7,19 +7,27 @@ const connection: ConnectionOptions = {
     password: process.env.REDIS_PASSWORD,
 };
 
-export const eventQueue = new Queue("omnichat-events", {
-    connection,
-    defaultJobOptions: {
-        attempts: 5,
-        backoff: {
-            type: "exponential",
-            delay: 1000,
-        },
-        removeOnComplete: true,
-        removeOnFail: false, // Keep in failed set for DLQ analysis
-    },
-});
+let _eventQueue: Queue | null = null;
+
+export function getEventQueue() {
+    if (!_eventQueue) {
+        _eventQueue = new Queue("omnichat-events", {
+            connection,
+            defaultJobOptions: {
+                attempts: 5,
+                backoff: {
+                    type: "exponential",
+                    delay: 1000,
+                },
+                removeOnComplete: true,
+                removeOnFail: false,
+            },
+        });
+    }
+    return _eventQueue;
+}
 
 export async function enqueueEvent(event: OmniEvent, payload: any) {
-    return await eventQueue.add(event, payload);
+    const queue = getEventQueue();
+    return await queue.add(event, payload);
 }

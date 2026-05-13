@@ -6,13 +6,20 @@ import { Redis } from "@upstash/redis";
  * builds without real credentials). This prevents build-time crashes.
  */
 export function createRedisClient() {
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-        console.warn("[REDIS] Missing Upstash credentials, skipping client creation.");
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!url || !token || url === "..." || !url.startsWith("https://")) {
+        if (url && url !== "...") {
+            console.warn(`[REDIS] Invalid Upstash URL: ${url}. Skipping client creation.`);
+        } else {
+            console.warn("[REDIS] Missing or placeholder Upstash credentials, skipping client creation.");
+        }
         return null;
     }
     return new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        url,
+        token,
     });
 }
 

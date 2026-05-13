@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { getOrCreateSession, trackActivity } from "@/lib/sales/session";
 
 export async function POST(req: Request) {

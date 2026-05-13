@@ -9,29 +9,52 @@ const connection: ConnectionOptions = {
     password: process.env.REDIS_PASSWORD,
 };
 
-export const eventWorker = new Worker(
-    "omnichat-events",
-    async (job: Job) => {
-        const eventName = job.name as OmniEvent;
-        const payload = job.data;
+let eventWorker: Worker | null = null;
 
-        logger.info(`[WORKER] Processing event: ${eventName}`, { 
-            jobId: job.id, 
-            attempt: job.attemptsMade + 1 
-        });
+if (process.env.NEXT_PHASE !== "phase-production-build" && typeof window === "undefined") {
+    eventWorker = new Worker(
+        "omnichat-events",
+        async (job: Job) => {
+            const eventName = job.name as OmniEvent;
+            const payload = job.data;
 
-        try {
-            await handleEvent(eventName, payload);
-        } catch (err) {
-            logger.error(`[WORKER] Event handler failed: ${eventName}`, { 
+            logger.info(`[WORKER] Processing event: ${eventName}`, { 
                 jobId: job.id, 
-                error: err instanceof Error ? err.message : String(err) 
+                attempt: job.attemptsMade + 1 
             });
-            throw err; // Trigger retry
+
+            try {
+                await handleEvent(eventName, payload);
+            } catch (err) {
+                logger.error(`[WORKER] Event handler failed: ${eventName}`, { 
+                    jobId: job.id, 
+                    error: err instanceof Error ? err.message : String(err) 
+                });
+                throw err; // Trigger retry
+            }
+        },
+        { connection, concurrency: 5 }
+    );
+
+    // Dead Letter Queue Handling
+    eventWorker.on("failed", (job, err) => {
+        if (job && job.attemptsMade >= (job.opts.attempts || 1)) {
+            logger.error(`[DLQ] Event permanently failed: ${job.name}`, {
+                jobId: job.id,
+                payload: job.data,
+                error: err.message,
+            });
+            
+            // Trigger Critical Alert
+            const projectId = job.data.projectId || "system";
+            alerts.criticalToolFailure(projectId, `event_worker:${job.name}`, err.message);
         }
-    },
-    { connection, concurrency: 5 }
-);
+    });
+
+    eventWorker.on("completed", (job) => {
+        logger.info(`[WORKER] Event completed: ${job.name}`, { jobId: job.id });
+    });
+}
 
 async function handleEvent(event: OmniEvent, payload: any) {
     // Implement event-specific logic here
@@ -50,21 +73,4 @@ async function handleEvent(event: OmniEvent, payload: any) {
     }
 }
 
-// Dead Letter Queue Handling
-eventWorker.on("failed", (job, err) => {
-    if (job && job.attemptsMade >= (job.opts.attempts || 1)) {
-        logger.error(`[DLQ] Event permanently failed: ${job.name}`, {
-            jobId: job.id,
-            payload: job.data,
-            error: err.message,
-        });
-        
-        // Trigger Critical Alert
-        const projectId = job.data.projectId || "system";
-        alerts.criticalToolFailure(projectId, `event_worker:${job.name}`, err.message);
-    }
-});
-
-eventWorker.on("completed", (job) => {
-    logger.info(`[WORKER] Event completed: ${job.name}`, { jobId: job.id });
-});
+export { eventWorker };
