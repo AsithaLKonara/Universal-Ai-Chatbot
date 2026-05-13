@@ -1,155 +1,93 @@
-# OmniChat AI — Universal Context-Aware Chatbot Platform
+# OmniChat AI — Enterprise-Grade Autonomous Commerce Platform
 
-Build a chatbot platform that can integrate into **any web product**, automatically understand application environment, user session, database structure, page context, and workflows to provide **accurate, intelligent, contextual responses**.
-
----
-
-## 🚀 Project Progress
-
-**Overall Progress: 100%**  
-![Progress](https://progress-bar.dev/100/?scale=100&title=Progress&width=600)
-
-- [x] Phase 1: Foundation (Completed)
-- [x] Phase 2: Context System (Completed)
-- [x] Phase 3: Knowledge System (Completed)
-- [x] Phase 4: Memory System (Completed)
-- [x] Phase 5: Universal SDK (Completed)
-- [x] Phase 6: Admin Dashboard (Completed)
-- [x] Phase 7: Optimization (Completed)
-- [x] Phase 8: Production Deployment (Completed)
+OmniChat is a high-maturity, multi-tenant SaaS platform designed to transform traditional ecommerce into **Autonomous AI-Driven Commerce**. It goes beyond simple chat by providing a deterministic, production-hardened infrastructure for sales, support, and payments across Web and WhatsApp.
 
 ---
 
-## 1. Project Proposal
+## 🚀 Platform Status
 
-### Vision
-Build a chatbot platform that can integrate into **any web product**, automatically understand:
-* Application environment
-* User session
-* Database structure
-* Page context
-* Workflows
+**Current Maturity: Production-Certified (Enterprise-Grade)**  
+![Progress](https://progress-bar.dev/100/?scale=100&title=Maturity&width=600)
 
-and provide **accurate, intelligent, contextual responses**.
-
-### Core Objectives
-* Universal integration SDK
-* Context-aware AI responses
-* Automatic middle prompt generation
-* High accuracy via RAG
-* Free AI API based infrastructure
-* Multi-product support
+- [x] **Core Architecture**: Unified Orchestrator & Deterministic FSM.
+- [x] **Multi-Channel**: Native Web SDK & WhatsApp Cloud API integration.
+- [x] **Commerce Loop**: Stripe Payment → WooCommerce Fulfillment automation.
+- [x] **Resilience Stack**: Circuit breakers, exponential backoff, and chaos validation.
+- [x] **Operational Intelligence**: AI ROI tracking, cost spend analytics, and conversion probability.
+- [x] **Security & Governance**: Prompt versioning, multi-tenant isolation, and GDPR compliance.
 
 ---
 
-## 2. System Architecture
+## 🧠 Core Architectural Pillars
 
-```mermaid
-graph TD
-    A[Frontend Website] --> B[OmniChat SDK]
-    B --> C[Chat Widget UI]
-    C --> D[Next.js Chat API]
-    D --> E[AI Orchestrator Layer]
-    E --> F[Context Engine]
-    E --> G[Prompt Builder]
-    E --> H[Knowledge Retrieval]
-    H --> I[Vector DB - Supabase]
-    G --> J[AI API - Groq]
-    J --> K[Response]
-    K --> C
-```
+### 1. Unified Intelligence Orchestrator
+A centralized `OrchestratorService` governs the entire request lifecycle. It handles intent detection, context assembly (RAG), tool execution, and response generation, ensuring identical behavior across all channels.
+
+### 2. Deterministic Checkout FSM
+A strict Finite State Machine governs the checkout process. This prevents AI hallucinations from bypassing critical steps like address collection or payment initiation, ensuring 100% reliable commerce transitions.
+
+### 3. Adaptive Commerce Intelligence
+- **Predictive Engine**: Real-time forecasting of conversion probability and churn risk.
+- **AI Evaluation**: Automated quality scoring for relevance, goal alignment, and hallucination risk.
+- **Cost Intelligence**: Detailed tracking of token spend per tenant with real-time AI ROI calculation.
 
 ---
 
-## 3. Phase-by-Phase Roadmap
-
-### Phase 1 — Foundation (Week 1)
-**Goal:** Basic chatbot working with AI API.
-- [x] Next.js project setup
-- [x] Chat API route implementation
-- [x] Groq API integration
-- [x] Basic chat UI
-- [x] Environment variables setup
-
-### Phase 2 — Context System (Week 2)
-**Goal:** Environment-aware chatbot.
-- [x] Context extractor development
-- [x] Dynamic prompt builder
-- [x] Context injection system
-- [x] URL & Session capture logic
-
-### Phase 3 — Knowledge System (Week 3)
-**Goal:** Accurate chatbot using knowledge (RAG).
-- [x] Supabase setup & Vector DB configuration
-- [x] Embedding system implementation
-- [x] Retrieval algorithm (Semantic Search)
-- [x] Document processing pipeline
-
-### Phase 4 — Memory System (Week 4)
-**Goal:** Chatbot remembers conversation.
-- [x] Conversation storage schema
-- [x] Memory retrieval logic
-- [x] Session management
-- [x] Multi-turn conversation handling
-
-### Phase 5 — Universal SDK (Week 5)
-**Goal:** Integrate chatbot into any website.
-- [x] Bundleable JS SDK
-- [x] `chatbot.init()` and `mount()` methods
-- [x] Cross-domain communication (postMessage)
-- [x] Authentication & Security
-
-### Phase 6 — Admin Dashboard (Week 6)
-**Goal:** Manage chatbot and knowledge.
-- [x] Project management dashboard
-- [x] Knowledge base upload (CSV/PDF/Link)
-- [x] Conversation logs & Analytics
-- [x] Usage monitoring
-
-### Phase 7 — Optimization (Week 7)
-**Goal:** Improve accuracy and speed.
-- [x] Prompt engineering refinement
-- [x] Response caching
-- [x] Vector search tuning (re-ranking)
-- [x] Performance benchmarking
-
-### Phase 8 — Production Deployment (Week 8)
-**Goal:** Live production system.
-- [x] Vercel deployment
-- [x] Database hardening
-- [x] CI/CD pipeline setup
-- [x] Final QA & Launch
-
----
-
-## 4. Technology Stack
+## 🛠️ Technology Stack
 
 | Layer | Technology |
 | --- | --- |
-| **Frontend** | Next.js, React, Tailwind CSS |
-| **Backend** | Next.js API Routes, Node.js |
-| **Database** | Supabase (PostgreSQL + pgvector) |
-| **AI Engine** | Groq (Llama 3), OpenAI SDK |
-| **Hosting** | Vercel |
+| **Framework** | Next.js 15 (App Router), React |
+| **Language** | TypeScript (Strict Mode) |
+| **Database** | PostgreSQL (Supabase) + Prisma ORM |
+| **Real-time/Cache** | Redis (Upstash) |
+| **Async Processing** | BullMQ |
+| **AI Engine** | Groq (Llama 3.3 70B), OpenAI SDK |
+| **Payments** | Stripe (Webhook-driven lifecycle) |
+| **Integrations** | WooCommerce REST API, WhatsApp Cloud API |
+| **Observability** | OpenTelemetry, Structured Logging (Correlation IDs) |
+| **Security** | Zod (Contract Enforcement), Prompt Injection Defenses |
 
 ---
 
-## 5. Database Design
+## 📊 Database Design (Core Entities)
 
-### Projects Table
-`id, name, api_key, created_at, user_id`
-
-### Conversations Table
-`id, project_id, user_id, message, response, timestamp`
-
-### Knowledge Table
-`id, project_id, content, embedding (vector), metadata`
+- **Project**: Multi-tenant configurations (WhatsApp/WC/Courier credentials).
+- **Customer**: Persistent profile with learned preferences (Smart Memory).
+- **Cart & CheckoutSession**: Transactional state tracking for commerce loops.
+- **SystemEvent**: Idempotent audit trail for webhooks and internal transitions.
+- **Usage**: Token-level spend tracking for billing and ROI metrics.
 
 ---
 
-## 6. Getting Started
+## 🛡️ Production Hardening & Safety
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Setup `.env.local` with your Groq and Supabase keys.
-4. Run locally: `npm run dev`
+- **Multi-Tenant Isolation**: Enforced via Prisma middleware and namespaced Redis keys.
+- **Idempotency**: "Exactly-Once" execution for Stripe/WhatsApp webhooks.
+- **Chaos Engineering**: Built-in failure simulation for WooCommerce and AI API dependencies.
+- **Compliance**: GDPR-ready PII masking and transactional data purging.
+
+---
+
+## 🚦 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL & Redis (Upstash recommended)
+- Groq / OpenAI API Keys
+- Stripe & WhatsApp Cloud API credentials
+
+### Installation
+1. Clone the repository.
+2. Install dependencies: `npm install`.
+3. Copy `.env.example` to `.env.local` and configure your credentials.
+4. Generate Prisma client: `npx prisma generate`.
+5. Run development server: `npm run dev`.
+
+---
+
+## 📈 Roadmap for Scale
+- [ ] **Predictive Churn Analysis**: Advanced modeling of customer exit intent.
+- [ ] **Automated Prompt Regression**: CI/CD integration for AI quality scoring.
+- [ ] **Multi-Region Persistence**: Global Redis replication for low-latency edge commerce.
+- [ ] **Enterprise SSO/RBAC**: Advanced administrative governance for large organizations.
