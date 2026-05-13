@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+import { createRedisClient } from "./redis";
 
 export interface WooCommerceConfig {
     storeUrl: string;
@@ -6,14 +6,8 @@ export interface WooCommerceConfig {
     consumerSecret: string;
 }
 
-let redis: Redis | null = null;
-function getRedis() {
-    if (redis) return redis;
-    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-        redis = Redis.fromEnv();
-    }
-    return redis;
-}
+let redis = createRedisClient();
+function getRedis() { return redis; }
 
 // Basic-auth header
 function authHeaders(config: WooCommerceConfig): Record<string, string> {

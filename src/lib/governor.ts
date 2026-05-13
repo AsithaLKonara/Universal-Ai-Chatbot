@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+import { createRedisClient } from "./redis";
 
 export enum CommerceStrategy {
     PREMIUM = "PREMIUM",
@@ -16,14 +16,8 @@ export interface SystemWeights {
     };
 }
 
-let redis: Redis | null = null;
-function getRedis() {
-    if (redis) return redis;
-    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-        redis = Redis.fromEnv();
-    }
-    return redis;
-}
+let redis = createRedisClient();
+function getRedis() { return redis; }
 
 const GOVERNOR_KEY = "omnichat:governor:weights";
 

@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { Redis } from "@upstash/redis";
+import { createRedisClient } from "./redis";
 
 export enum OmniEvent {
     CART_UPDATED = "cart.updated",
@@ -21,18 +21,7 @@ export enum OmniEvent {
     AUTONOMOUS_MESSAGE_GENERATED = "autonomous.message.generated"
 }
 
-let redis: Redis | null = null;
-if (
-    process.env.UPSTASH_REDIS_REST_URL && 
-    process.env.UPSTASH_REDIS_REST_URL.startsWith("https://") &&
-    process.env.UPSTASH_REDIS_REST_TOKEN
-) {
-    try {
-        redis = Redis.fromEnv();
-    } catch (e) {
-        console.warn("[EVENT] Failed to initialize Redis. Continuing without it.", e);
-    }
-}
+const redis = createRedisClient();
 
 class OmniBus extends EventEmitter {
     private static instance: OmniBus;

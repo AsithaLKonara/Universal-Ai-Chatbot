@@ -10,7 +10,7 @@ import {
     formatOrderSummary,
 } from "@/lib/woocommerce";
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { createRedisClient } from "@/lib/redis";
 import { NextResponse } from "next/server";
 import { getCart, addToCart, clearCart } from "@/lib/cart";
 import { getOrCreateCheckout } from "@/lib/checkout";
@@ -29,9 +29,10 @@ import { evaluateConfidence } from "@/lib/commerce/confidence";
 export const dynamic = "force-dynamic";
 
 let ratelimit: Ratelimit | null = null;
-if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+const _redisForRateLimit = createRedisClient();
+if (_redisForRateLimit) {
     ratelimit = new Ratelimit({
-        redis: Redis.fromEnv(),
+        redis: _redisForRateLimit,
         limiter: Ratelimit.slidingWindow(20, "1 m"),
     });
 }

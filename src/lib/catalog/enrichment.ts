@@ -1,11 +1,8 @@
 import { groq } from "../groq";
 import { WCProduct, getProduct, WooCommerceConfig } from "../woocommerce";
-import { Redis } from "@upstash/redis";
+import { createRedisClient } from "../redis";
 
-let redis: Redis | null = null;
-if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    redis = Redis.fromEnv();
-}
+const redis = createRedisClient();
 
 export interface EnrichedMetadata {
     semanticTags: string[];
