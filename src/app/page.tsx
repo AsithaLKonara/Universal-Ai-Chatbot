@@ -7,13 +7,18 @@ import { ChatWidget } from "@/components/chat-widget";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Terminal, Zap, Box, Layers, Globe } from "lucide-react";
 import Link from "next/link";
-import { useVideoScrub } from "@/hooks/useVideoScrub";
+import { useCanvasSequence } from "@/hooks/useCanvasSequence";
 
 export default function Home() {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useVideoScrub(videoRef);
+  useCanvasSequence(canvasRef, {
+    frameCount: 403,
+    getFrameUrl: (i) => `/frames/frame_${i.toString().padStart(4, "0")}.jpg`,
+    lerpScroll: 0.05,
+    lerpFrame: 0.12,
+  });
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -52,19 +57,9 @@ export default function Home() {
 
       {/* Fixed Background Video — GPU accelerated */}
       <div className="fixed inset-0 w-full h-full z-0 overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          src="/0513.mp4"
+        <canvas
+          ref={canvasRef}
           className="absolute inset-0 w-full h-full object-cover opacity-80"
-          muted
-          playsInline
-          preload="auto"
-          // GPU acceleration via inline style
-          style={{
-            willChange: "transform",
-            transform: "translateZ(0)",
-            backfaceVisibility: "hidden",
-          }}
         />
         {/* Multi-stop cinematic overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/80" />
