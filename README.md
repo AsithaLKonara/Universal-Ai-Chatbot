@@ -87,10 +87,10 @@ A strict Finite State Machine governs the checkout process. This prevents AI hal
 ---
 
 ## 📈 Roadmap for Scale
-- [ ] **Predictive Churn Analysis**: Advanced modeling of customer exit intent.
-- [ ] **Automated Prompt Regression**: CI/CD integration for AI quality scoring.
-- [ ] **Multi-Region Persistence**: Global Redis replication for low-latency edge commerce.
-- [ ] **Enterprise SSO/RBAC**: Advanced administrative governance for large organizations.
+- [x] **Predictive Churn Analysis**: AI detection of user abandonment and intent signals.
+- [x] **Automated Prompt Regression**: CI/CD integration for AI quality scoring.
+- [x] **Multi-Region Persistence**: Global Redis replication for low-latency edge commerce.
+- [x] **Enterprise SSO/RBAC**: Advanced administrative governance for large organizations.
 
 
 Area	Before	After

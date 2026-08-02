@@ -30,12 +30,19 @@ export function ChatWidget({
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Initialize session ID
+    // Initialize session ID using cookie
     useEffect(() => {
-        let sid = localStorage.getItem("omnichat_session_id");
+        const getCookie = (name: string) => {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop()?.split(';').shift();
+            return null;
+        };
+        
+        let sid = getCookie("omnichat_session_id");
         if (!sid) {
             sid = crypto.randomUUID();
-            localStorage.setItem("omnichat_session_id", sid);
+            document.cookie = `omnichat_session_id=${sid}; path=/; max-age=31536000; SameSite=Lax`;
         }
         setSessionId(sid);
     }, []);

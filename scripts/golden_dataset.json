@@ -1,0 +1,32 @@
+[
+    {
+        "id": "tc-001",
+        "description": "Vague product search",
+        "input": "I am looking for something to wear to a summer party",
+        "expectedIntent": "product_search"
+    },
+    {
+        "id": "tc-002",
+        "description": "High friction cart abandonment",
+        "input": "This is too expensive, I don't think I can afford it right now",
+        "expectedIntent": "cart_abandonment_signal"
+    },
+    {
+        "id": "tc-003",
+        "description": "Complex cart operation",
+        "input": "Actually, change the blue shirt to size M and add two red hats",
+        "expectedIntent": "cart_management"
+    },
+    {
+        "id": "tc-004",
+        "description": "Direct checkout intent",
+        "input": "I'm ready to pay",
+        "expectedIntent": "checkout_start"
+    },
+    {
+        "id": "tc-005",
+        "description": "Comparison request",
+        "input": "What is the difference between the pro version and the standard one?",
+        "expectedIntent": "comparison_request"
+    }
+]

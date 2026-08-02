@@ -33,7 +33,7 @@ export async function withEventIdempotency<T>(
                 externalId: eventId,
                 type: `idempotency:${namespace}`,
                 projectId: "system", // Or extract from context if available
-                metadata: { processedAt: new Date().toISOString() }
+                payload: { processedAt: new Date().toISOString() }
             }
         });
 

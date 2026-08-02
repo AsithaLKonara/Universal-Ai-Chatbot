@@ -18,6 +18,7 @@ import { validateInput, sanitizeOutput } from "../../security";
 import { withObservability } from "../../middleware/observability";
 import { PredictiveEngine } from "../../intelligence/predictive";
 import { EvalService } from "../../intelligence/evaluator";
+import { omniBus, OmniEvent } from "../../events";
 
 export class OrchestratorService {
     public static async process(ctx: OrchestratorContext): Promise<OrchestratorResponse> {
@@ -48,6 +49,12 @@ export class OrchestratorService {
 
                     // 1b. Predictive Intelligence
                     const prediction = await PredictiveEngine.evaluateSession(projectId, userId, history, cart);
+                    omniBus.emitOmni(OmniEvent.OUTCOME_SIGNAL, { 
+                        ...prediction,
+                        sessionId,
+                        projectId,
+                        timestamp: Date.now()
+                    });
 
                     // 2. Intent Detection
                     const intent = await detectIntent(message);

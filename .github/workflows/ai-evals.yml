@@ -1,0 +1,32 @@
+name: AI Prompt Regression Evals
+
+on:
+  pull_request:
+    paths:
+      - 'src/lib/prompts.ts'
+      - 'src/lib/agent/**'
+      - 'src/lib/intelligence/**'
+      - 'scripts/run-evals.ts'
+      - 'scripts/golden_dataset.json'
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run AI Evaluations
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: yarn tsx scripts/run-evals.ts

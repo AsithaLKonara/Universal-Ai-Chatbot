@@ -12,7 +12,45 @@ const connection: ConnectionOptions = {
 
 let eventWorker: Worker | null = null;
 
-if (process.env.NEXT_PHASE !== "phase-production-build" && typeof window === "undefined") {
+async function handleEvent(event: OmniEvent, payload: any) {
+    const { prisma } = await import("../prisma");
+    const { logger } = await import("../logger");
+    
+    switch (event) {
+        case OmniEvent.ANALYTICS_TRACK:
+            // Process analytics asynchronously
+            await prisma.systemEvent.create({
+                data: {
+                    type: OmniEvent.ANALYTICS_TRACK,
+                    projectId: payload.projectId || "system",
+                    payload: payload
+                }
+            });
+            break;
+        case OmniEvent.ORDER_CREATED:
+            // Send email receipts, update inventory, etc.
+            logger.info(`[WORKER] Order created hook triggered for project ${payload.projectId}`, payload);
+            break;
+        case OmniEvent.REFLECTION_GENERATED:
+            // Update customer memory asynchronously
+            logger.info(`[WORKER] Reflection generated, updating customer ${payload.customerId}`);
+            if (payload.customerId && payload.reflection) {
+                await prisma.customer.update({
+                    where: { id: payload.customerId },
+                    data: {
+                        preferences: payload.reflection // Assuming reflection is stored in preferences JSON
+                    }
+                });
+            }
+            break;
+        default:
+            logger.warn(`[WORKER] No specific handler for event: ${event}`);
+    }
+}
+
+export function createEventWorker() {
+    if (typeof window !== "undefined") return null;
+    
     eventWorker = new Worker(
         "omnichat-events",
         async (job: Job) => {
@@ -57,22 +95,8 @@ if (process.env.NEXT_PHASE !== "phase-production-build" && typeof window === "un
     eventWorker.on("completed", (job) => {
         logger.info(`[WORKER] Event completed: ${job.name}`, { jobId: job.id });
     });
-}
 
-async function handleEvent(event: OmniEvent, payload: any) {
-    switch (event) {
-        case OmniEvent.ANALYTICS_TRACK:
-            // Process analytics asynchronously
-            break;
-        case OmniEvent.ORDER_CREATED:
-            // Send email receipts, update inventory, etc.
-            break;
-        case OmniEvent.REFLECTION_GENERATED:
-            // Update customer memory asynchronously
-            break;
-        default:
-            logger.warn(`[WORKER] No specific handler for event: ${event}`);
-    }
+    return eventWorker;
 }
 
 export { eventWorker };

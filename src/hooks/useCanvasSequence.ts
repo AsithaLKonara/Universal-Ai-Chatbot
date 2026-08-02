@@ -35,6 +35,9 @@ export function useCanvasSequence(
   const lastDrawnFrame = useRef(-1);
 
   useEffect(() => {
+    // Disable heavy canvas animations on mobile devices
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
