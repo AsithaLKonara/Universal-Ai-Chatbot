@@ -73,11 +73,11 @@ The "Post-Mortem Analyst."
 
 ## 5. Omni-Commerce Engine: Deterministic Sales Flow
 
-### 5.1 WooCommerce Integration
-A deep, bidirectional synchronization bridge.
-- **Product Indexing**: Fetches full product metadata, attributes, and variations.
-- **Real-time Inventory**: Validates stock levels during the `cart_add` phase.
-- **Order Injection**: Creates orders directly in WooCommerce via REST API with automated status mapping.
+### 5.1 Real-Time WooCommerce Webhooks
+A deep, bidirectional synchronization bridge designed for **real-time event-driven architecture**.
+- **Webhook Integration**: Listens to `order.updated` and `product.updated` webhooks directly from WooCommerce via `/api/webhooks/woocommerce`.
+- **Idempotency & Security**: Uses `HMAC-SHA256` signature verification (`WC_WEBHOOK_SECRET`) to authenticate incoming hooks. 
+- **Database Synchronization**: Maps WooCommerce payloads instantly to the Postgres `CheckoutSession`, updating states synchronously so AI agents always have the absolute latest source-of-truth.
 
 ### 5.2 Conversational Checkout State Machine
 To ensure reliability, checkout is handled by a **Deterministic FSM (Finite State Machine)** rather than free-form LLM generation.
@@ -85,7 +85,7 @@ To ensure reliability, checkout is handled by a **Deterministic FSM (Finite Stat
 2.  **INFO**: Collection of customer identity (Name, Phone, Email).
 3.  **SHIPPING**: Address validation and shipping method selection.
 4.  **PAYMENT**: Generation of secure Stripe Checkout sessions.
-5.  **CONFIRMATION**: Final WooCommerce order generation and WhatsApp receipt.
+5.  **CONFIRMATION**: Final WooCommerce order generation, real-time webhook sync, and WhatsApp receipt.
 
 ---
 
@@ -112,7 +112,7 @@ To ensure reliability, checkout is handled by a **Deterministic FSM (Finite Stat
 | **Database** | PostgreSQL | The gold standard for relational SaaS data with native vector support. |
 | **ORM** | Prisma | Simplifies complex multi-tenant relations and ensures database integrity. |
 | **Inference** | Groq (Llama 3) | Offers the world's fastest token-per-second rate, critical for conversational UX. |
-| **Cache** | Upstash Redis | Serverless Redis optimized for Next.js edge environments. |
+| **Cache/Queue**| Upstash Redis & BullMQ| High-throughput distributed background worker system. |
 | **Billing** | Stripe | Native support for metered billing and subscription life-cycle management. |
 
 ---
@@ -124,43 +124,38 @@ The frontend is built on **React Server Components (RSC)**.
 - **Streaming UI**: Using `Suspense` and `React.use()`, the UI streams the AI's "thought process" and tool results to the user as they happen.
 - **Edge Rendering**: The landing page and dashboard are rendered at the edge for instant TTI (Time to Interactive).
 
-### 8.2 Backend: Service-Oriented Logic
-The backend follows a **Service Pattern**.
+### 8.2 Backend: Event-Driven Background Engine (OmniBus)
+The backend follows a **Service Pattern combined with a Decoupled Worker pattern**.
 - `lib/services/`: Contains isolated logic for WooCommerce, WhatsApp, and Stripe.
-- **Event-Driven**: Uses an internal `omniBus` (EventEmitter) to decouple core chat logic from auxiliary tasks like analytics and logging.
+- **BullMQ Workers**: High-latency tasks like PDF embedding, analytics aggregation, and email sending are offloaded to `BullMQ` workers.
+- **OmniBus (Redis Pub/Sub)**: Real-time event broadcasting (`omniBus.emit()`) across servers using Upstash Redis, decoupling the chat response loop from side effects like telemetry.
 
 ---
 
 ## 9. Relational Schema & Database Design
 
-The schema is optimized for **Multi-Tenant Relational Integrity**.
+The schema is optimized for **Multi-Tenant Relational Integrity and Role-Based Access Control (RBAC)**.
 
 ```prisma
 model Project {
   id                String   @id @default(cuid())
   name              String
-  whatsappToken     String?
-  wooCommerceUrl    String?
-  // ... other configs
   customers         Customer[]
-  conversations     Conversation[]
-  knowledge         Knowledge[]
-  billing           Subscription?
+  members           ProjectMember[]
 }
 
-model Customer {
-  id          String   @id @default(cuid())
-  projectId   String
-  phone       String
-  cart        Cart?
-  orders      Order[]
+model ProjectMember {
+  id        String      @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectRole @default(VIEWER) // ADMIN, EDITOR, VIEWER
 }
 
-model Knowledge {
-  id          String   @id @default(cuid())
-  projectId   String
-  content     String
-  embedding   Unsupported("vector(1536)")?
+model CheckoutSession {
+  id        String   @id @default(cuid())
+  projectId String
+  orderId   Int?     @unique  // Mapped to WooCommerce Order ID for webhooks
+  status    String   // PENDING, COMPLETED, FAILED
 }
 ```
 
@@ -168,13 +163,16 @@ model Knowledge {
 
 ## 10. Security & Governance Architecture
 
-### 10.1 AI Governance
+### 10.1 Enterprise SSO & Identity
+- **JIT Provisioning**: Users are dynamically provisioned in Postgres during their first SSO login (via Google/NextAuth).
+- **Hierarchical RBAC**: Using `ProjectRole` (Admin, Editor, Viewer), access to dashboard mutations is strictly enforced at the API layer.
+
+### 10.2 AI Governance & Guardrails
 - **Supervisor Safeguards**: Every LLM output is parsed for "Forbidden Patterns" (hallucinated prices, PII leakage).
 - **Hallucination Prevention**: The system forces the bot to cite a WooCommerce `product_id` for any item it mentions.
 
-### 10.2 API & Identity
-- **JWT-Based Sessions**: Secure session management via NextAuth.
-- **Webhook Verification**: Every WhatsApp and Stripe webhook is verified using cryptographic signatures (`HMAC-SHA256`).
+### 10.3 API Defense
+- **Webhook Verification**: Every WhatsApp, WooCommerce, and Stripe webhook is verified using cryptographic signatures (`HMAC-SHA256`).
 
 ---
 
@@ -195,14 +193,12 @@ model Knowledge {
 │   ├── components/         # Nano Design System UI Components
 │   ├── lib/
 │   │   ├── services/       # 3rd Party Integrations (Woo, WhatsApp, Stripe)
+│   │   ├── events/         # OmniBus & BullMQ Worker definitions
 │   │   ├── agent/          # Agentic Pipeline (Intent, Planner, Supervisor)
-│   │   ├── commerce/       # Cart & Checkout Logic
-│   │   ├── knowledge/      # RAG & Embedding Logic
-│   │   └── utils/          # Formatting & Helpers
-│   ├── hooks/              # Custom React Hooks
-│   ├── store/              # State Management (Zustand)
+│   │   └── commerce/       # Cart & Checkout Logic
+│   ├── e2e/                # Playwright End-to-End Tests
 │   └── types/              # Global TypeScript Definitions
-├── prisma/                 # Database Schema & Migrations
+├── prisma/                 # Database Schema, Migrations, & Seed Scripts
 └── public/                 # Static Assets & Global Visuals
 ```
 
@@ -213,10 +209,10 @@ model Knowledge {
 1.  **Autonomous Workflow Agents**: Specialized sub-agents for specific tasks like "Inventory Manager" and "Support Tier 2".
 2.  **Cross-Channel Memory**: Allowing a user to start a chat on the Web and continue on WhatsApp with perfect state preservation.
 3.  **Predictive Restocking**: Notifying business owners when AI predicts stock will run out based on conversation volume.
-4.  **Decentralized Intelligence**: Moving inference closer to the user via Edge-based LLM execution (Wasm).
+4.  **Voice-Native Agents**: Moving inference closer to the user via Voice channels (Twilio).
 
 ---
 
 **Universal AI Chatbot Systems Ltd.**
 *Engineering for the Autonomous Era.*
-*Document Version: 4.2.0-Production*
+*Document Version: 5.0.0-Production*
