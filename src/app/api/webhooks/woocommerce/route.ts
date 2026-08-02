@@ -105,14 +105,14 @@ export async function POST(req: NextRequest) {
 
                 if (idempotencyMeta?.value) {
                     const sessionRecord = await prisma.checkoutSession.findFirst({
-                        where: { orderId: wcOrderId.toString() } as any,
+                        where: { orderId: wcOrderId.toString() },
                         select: { id: true, projectId: true },
                     });
 
                     if (sessionRecord) {
                         // Run update inside the correct project context
                         await projectContext.run({ projectId: sessionRecord.projectId }, async () => {
-                            await (prisma.checkoutSession as any).update({
+                            await prisma.checkoutSession.update({
                                 where: { id: sessionRecord.id },
                                 data: { 
                                     status: wcStatus === "completed" ? "COMPLETED" : 
