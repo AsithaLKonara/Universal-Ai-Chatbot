@@ -50,6 +50,7 @@ export interface CustomerPreferences {
     budget: number | null;
     dislikedProducts: string[];
     shoppingFrequency: string;
+    recentFriction?: "negative" | "positive" | "none";
 }
 
 export interface CustomerProfile {
@@ -74,8 +75,7 @@ export async function getCustomerProfile(projectId: string, phone: string): Prom
             }
         }
     });
-
-    return data as CustomerProfile;
+    return data as unknown as CustomerProfile;
 }
 
 // Create or update a customer record

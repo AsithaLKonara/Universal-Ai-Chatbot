@@ -1,6 +1,6 @@
 import { CheckoutStage } from "../../checkout";
 
-export type Channel = "web" | "whatsapp" | "api";
+export type Channel = "web" | "whatsapp" | "api" | "voice";
 
 export interface OrchestratorContext {
     projectId: string;

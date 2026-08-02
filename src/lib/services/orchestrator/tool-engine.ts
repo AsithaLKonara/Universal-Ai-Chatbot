@@ -122,7 +122,7 @@ export class ToolExecutionEngine {
             }
         } catch (err) {
             if (err instanceof z.ZodError) {
-                console.warn("[TOOL] Contract validation failed", { error: err.errors, intent: intent.intent });
+                console.warn("[TOOL] Contract validation failed", { error: (err as any).errors, intent: intent.intent });
                 return { text: "I'm sorry, I couldn't process that because some information was missing or malformed. Could you try being more specific?" };
             }
             console.error("[TOOL] Execution failure", { error: err, intent: intent.intent });

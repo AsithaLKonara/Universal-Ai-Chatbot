@@ -1,5 +1,5 @@
-import { prisma } from "./prisma";
-import { logger } from "./logger";
+import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export interface PromptTemplate {
     id: string;
@@ -25,7 +25,7 @@ export class PromptService {
             const template = await prisma.systemEvent.findFirst({
                 where: { 
                     type: `prompt_template:${name}`,
-                    metadata: { path: "isActive", equals: true }
+                    payload: { path: ["isActive"], equals: true }
                 },
                 orderBy: { timestamp: "desc" }
             });
@@ -45,18 +45,24 @@ export class PromptService {
     public static async savePrompt(name: string, content: string, activate = true) {
         if (activate) {
             // Deactivate old versions
-            await prisma.systemEvent.updateMany({
-                where: { type: `prompt_template:${name}` },
-                data: { metadata: { isActive: false } }
+            const oldVersions = await prisma.systemEvent.findMany({
+                where: { type: `prompt_template:${name}` }
             });
+            for (const old of oldVersions) {
+                if (typeof old.payload === "object" && old.payload !== null) {
+                    await prisma.systemEvent.update({
+                        where: { id: old.id },
+                        data: { payload: { ...(old.payload as any), isActive: false } }
+                    });
+                }
+            }
         }
 
         return await prisma.systemEvent.create({
             data: {
                 projectId: "system",
                 type: `prompt_template:${name}`,
-                payload: { content },
-                metadata: { isActive: activate, version: Date.now() }
+                payload: { content, isActive: activate, version: Date.now() }
             }
         });
     }

@@ -5,6 +5,10 @@ import { ChatRequestSchema } from "@/lib/validation";
 import { OrchestratorService } from "@/lib/services/orchestrator";
 import { withObservability } from "@/lib/middleware/observability";
 import { logContext } from "@/lib/logger";
+import { searchProducts, getProduct } from "@/lib/woocommerce";
+import { getCart, addToCart } from "@/lib/cart";
+import { generateProductComparison } from "@/lib/commerce/comparison";
+import { trackActivity } from "@/lib/sales/session";
 
 export const dynamic = "force-dynamic";
 

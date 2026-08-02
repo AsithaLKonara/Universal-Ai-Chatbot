@@ -72,6 +72,35 @@ async function processMessage(projectId: string, inbound: any, config: any): Pro
     const sessionId = `wa:${from}`;
     const correlationId = `wa:${projectId}:${from}:${Date.now()}`;
 
+    if (text && text.trim().startsWith("LINK-")) {
+        const code = text.trim();
+        try {
+            const { createRedisClient } = await import("@/lib/redis");
+            const redis = createRedisClient();
+            if (redis) {
+                const handoffData = await redis.get(`handoff:${code}`);
+                if (handoffData) {
+                    const parsed = typeof handoffData === "string" ? JSON.parse(handoffData) : handoffData;
+                    
+                    await prisma.customer.update({
+                        where: { id: parsed.customerId },
+                        data: { phone: from }
+                    });
+                    
+                    await redis.del(`handoff:${code}`);
+                    await sendWhatsAppMessage(from, "✅ Session transferred successfully! Your web context is now synced.", config);
+                    return;
+                }
+            }
+            await sendWhatsAppMessage(from, "Sorry, this handoff code is invalid or has expired.", config);
+            return;
+        } catch (err) {
+            logger.error("[HANDOFF] Failed to link session", { error: err });
+            await sendWhatsAppMessage(from, "Sorry, there was an error transferring your session.", config);
+            return;
+        }
+    }
+
     return await withObservability(correlationId, async () => {
         try {
             const result = await OrchestratorService.process({

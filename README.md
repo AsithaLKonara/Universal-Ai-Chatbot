@@ -118,8 +118,8 @@ node test-wc-webhook.js
 - [x] **Automated Prompt Regression**: CI/CD integration for AI quality scoring.
 - [x] **Multi-Region Persistence**: Global Redis replication for low-latency edge commerce.
 - [x] **Enterprise SSO/RBAC**: Advanced administrative governance for large organizations.
-- [ ] **Cross-Channel Session Handoff**: Continue Web sessions directly on WhatsApp.
-- [ ] **Voice-Native Agent**: Twilio Voice integration for autonomous telephony.
+- [x] **Cross-Channel Session Handoff**: Continue Web sessions directly on WhatsApp.
+- [x] **Voice-Native Agent**: Twilio Voice integration for autonomous telephony.
 
 ---
 

@@ -70,6 +70,11 @@ model Project {
   
   courierEnabled     Boolean @default(false)
   courierApiKey      String?
+  
+  // Twilio Integration
+  twilioEnabled      Boolean @default(false)
+  twilioPhoneNumber  String?
+  twilioAuthToken    String?
 
   usage       Usage[]
   knowledge   Knowledge[]

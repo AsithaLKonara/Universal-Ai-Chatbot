@@ -7,7 +7,7 @@ export interface PromptContext {
     customer?: CustomerProfile;
     cart?: any;
     checkout?: any;
-    channel: "web" | "whatsapp" | "api";
+    channel: "web" | "whatsapp" | "api" | "voice";
     policy?: SafetyPolicy;
     strategy?: StrategyProfile;
 }
