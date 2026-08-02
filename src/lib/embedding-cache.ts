@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { createRedisClient } from "./redis";
 
-let redis = createRedisClient();
+const redis = createRedisClient();
 function getRedis() { return redis; }
 
 export async function getCachedEmbedding(text: string): Promise<number[] | null> {

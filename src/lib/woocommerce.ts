@@ -7,7 +7,7 @@ export interface WooCommerceConfig {
     consumerSecret: string;
 }
 
-let redis = createRedisClient();
+const redis = createRedisClient();
 function getRedis() { return redis; }
 
 // Basic-auth header

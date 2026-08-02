@@ -16,7 +16,7 @@ export interface SystemWeights {
     };
 }
 
-let redis = createRedisClient();
+const redis = createRedisClient();
 function getRedis() { return redis; }
 
 const GOVERNOR_KEY = "omnichat:governor:weights";

@@ -40,7 +40,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ project
         });
 
         // Strip markdown from response for TTS
-        let cleanText = result.content.replace(/[*#_`~\[\]>]/g, "").trim();
+        const cleanText = result.content.replace(/[*#_`~\[\]>]/g, "").trim();
 
         twiml.say(cleanText);
         twiml.gather({

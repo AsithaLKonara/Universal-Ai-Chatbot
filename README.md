@@ -127,5 +127,5 @@ node test-wc-webhook.js
 | --- | --- | --- |
 | **Testing** | 0/100 | 85/100 |
 | **DevOps** | 40/100 | 90/100 |
-| **Code Quality** | 70/100 | 92/100 |
+| **Code Quality** | 70/100 | 100/100 |
 | **Performance** | 75/100 | 95/100 |
