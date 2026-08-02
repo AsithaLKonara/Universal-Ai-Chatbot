@@ -6,11 +6,42 @@ export const projectContext = new AsyncLocalStorage<{ projectId: string }>();
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
+/**
+ * Serverless-aware Prisma Client with connection pooling.
+ * 
+ * In serverless environments (Vercel Edge/Functions), each invocation can spawn
+ * a new DB connection. Without pooling this exhausts PostgreSQL's max_connections.
+ * 
+ * Strategy:
+ * - connection_limit=1 per serverless instance (each function handles 1 req at a time).
+ * - pool_timeout=20s before connection attempt fails gracefully.
+ * - If PRISMA_ACCELERATE_URL is set, route through Prisma Accelerate (managed pooler).
+ */
+const getDatabaseUrl = () => {
+    // Prisma Accelerate URL takes priority (managed global connection pooler)
+    if (process.env.PRISMA_ACCELERATE_URL) {
+        return process.env.PRISMA_ACCELERATE_URL;
+    }
+    // Serverless: append pooling params to standard DATABASE_URL if not already present
+    const url = process.env.DATABASE_URL || "";
+    if (url && !url.includes("connection_limit") && !url.includes("pgbouncer")) {
+        const separator = url.includes("?") ? "&" : "?";
+        return `${url}${separator}connection_limit=1&pool_timeout=20`;
+    }
+    return url;
+};
+
 const prismaBase = globalForPrisma.prisma || new PrismaClient({
+    datasources: {
+        db: {
+            url: getDatabaseUrl(),
+        },
+    },
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
 });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prismaBase;
+
 
 // Models that MUST be scoped by projectId
 const SCOPED_MODELS = [

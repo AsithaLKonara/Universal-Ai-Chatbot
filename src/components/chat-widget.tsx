@@ -25,11 +25,20 @@ export function ChatWidget({
 }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const [messages, setMessages] = useState<{ role: string; content: string; data?: any }[]>([]);
-    // Using a fixed session ID for demo purposes, this should be generated per visitor
-    const sessionId = "guest_session";
+    const [sessionId, setSessionId] = useState<string>("");
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Initialize session ID
+    useEffect(() => {
+        let sid = localStorage.getItem("omnichat_session_id");
+        if (!sid) {
+            sid = crypto.randomUUID();
+            localStorage.setItem("omnichat_session_id", sid);
+        }
+        setSessionId(sid);
+    }, []);
 
     useEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -37,7 +46,7 @@ export function ChatWidget({
 
     // Telemetry Ping
     useEffect(() => {
-        if (!isOpen || !projectId) return;
+        if (!isOpen || !projectId || !sessionId) return;
         
         const sendPing = () => {
             fetch("/api/telemetry", {
@@ -60,7 +69,7 @@ export function ChatWidget({
 
     // SSE Stream Connection
     useEffect(() => {
-        if (!isOpen || !projectId) return;
+        if (!isOpen || !projectId || !sessionId) return;
 
         const eventSource = new EventSource(`/api/stream?sessionId=${sessionId}`);
         

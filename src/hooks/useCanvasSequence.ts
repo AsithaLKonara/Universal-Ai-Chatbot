@@ -11,11 +11,11 @@ interface CanvasSequenceOptions {
 /**
  * Ultra-smooth Apple-style Canvas Image Sequence Engine.
  * 
- * Architecture:
- * 1. Double-lerp pipeline (Scroll -> Frame Index -> Rendered Frame).
- * 2. GSAP Ticker for frame-perfect sync with Lenis and browser RAF.
- * 3. High DPI canvas management.
- * 4. Progressive preloading.
+ * Optimized for Mobile/Low-End devices:
+ * 1. Lazy Progressive Preloading (First 5 frames unblock render).
+ * 2. Render Caching (Only draw if frame changes).
+ * 3. Debounced Resizing.
+ * 4. GSAP Ticker for frame-perfect sync.
  */
 export function useCanvasSequence(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
@@ -31,7 +31,8 @@ export function useCanvasSequence(
   const currentProgress = useRef(0);
   const targetFrame = useRef(0);
   const smoothFrame = useRef(0);
-  const isPreloaded = useRef(false);
+  const isReady = useRef(false);
+  const lastDrawnFrame = useRef(-1);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -40,36 +41,63 @@ export function useCanvasSequence(
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
-    // 1. Preload Images
-    const preloadImages = () => {
-      let loadedCount = 0;
-      for (let i = 1; i <= frameCount; i++) {
-        const img = new Image();
-        img.src = getFrameUrl(i);
-        img.onload = () => {
+    // 1. Progressive Preload Strategy
+    const INITIAL_FRAMES = Math.min(5, frameCount);
+    let loadedCount = 0;
+
+    const loadFrame = (i: number, isInitial: boolean) => {
+      const img = new Image();
+      img.src = getFrameUrl(i);
+      img.onload = () => {
+        if (isInitial) {
           loadedCount++;
-          if (loadedCount === frameCount) {
-            isPreloaded.current = true;
+          if (loadedCount === INITIAL_FRAMES) {
+            isReady.current = true;
+            // Unblock rendering, then lazy load the rest in background
+            if (INITIAL_FRAMES < frameCount) {
+              requestIdleCallback ? requestIdleCallback(loadRemaining) : setTimeout(loadRemaining, 100);
+            }
           }
-        };
-        images.current[i - 1] = img;
+        }
+      };
+      images.current[i - 1] = img;
+    };
+
+    const loadRemaining = () => {
+      for (let i = INITIAL_FRAMES + 1; i <= frameCount; i++) {
+        loadFrame(i, false);
       }
     };
 
-    preloadImages();
+    for (let i = 1; i <= INITIAL_FRAMES; i++) {
+      loadFrame(i, true);
+    }
 
-    // 2. High DPI Scaling
+    // 2. High DPI Scaling with Debounce
+    let resizeTimer: NodeJS.Timeout;
+    let canvasWidth = window.innerWidth;
+    let canvasHeight = window.innerHeight;
+
     const resizeCanvas = () => {
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
+      canvasWidth = window.innerWidth;
+      canvasHeight = window.innerHeight;
+      
+      canvas.width = canvasWidth * dpr;
+      canvas.height = canvasHeight * dpr;
+      canvas.style.width = `${canvasWidth}px`;
+      canvas.style.height = `${canvasHeight}px`;
       ctx.scale(dpr, dpr);
+      lastDrawnFrame.current = -1; // Force redraw on resize
     };
 
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resizeCanvas, 150);
+    };
+
+    window.addEventListener("resize", onResize);
+    resizeCanvas(); // Initial execution
 
     // 3. Scroll Listener
     const onScroll = () => {
@@ -84,22 +112,20 @@ export function useCanvasSequence(
 
     // 4. Master Animation Loop (GSAP Ticker)
     const render = () => {
-      if (!isPreloaded.current) return;
+      if (!isReady.current) return;
 
-      // LERP 1: Scroll progress smoothing
       currentProgress.current += (targetProgress.current - currentProgress.current) * lerpScroll;
-
-      // LERP 2: Frame index smoothing
       targetFrame.current = currentProgress.current * (frameCount - 1);
       smoothFrame.current += (targetFrame.current - smoothFrame.current) * lerpFrame;
 
       const frameIndex = Math.round(smoothFrame.current);
+      
+      // Optimization: Only render if frame actually changed!
+      if (frameIndex === lastDrawnFrame.current) return;
+
       const img = images.current[frameIndex];
 
       if (img && img.complete) {
-        // Draw image covering the canvas (center cover)
-        const canvasWidth = window.innerWidth;
-        const canvasHeight = window.innerHeight;
         const imgWidth = img.width;
         const imgHeight = img.height;
         const ratio = Math.max(canvasWidth / imgWidth, canvasHeight / imgHeight);
@@ -110,6 +136,8 @@ export function useCanvasSequence(
 
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         ctx.drawImage(img, x, y, newWidth, newHeight);
+        
+        lastDrawnFrame.current = frameIndex;
       }
     };
 
@@ -117,8 +145,10 @@ export function useCanvasSequence(
 
     return () => {
       gsap.ticker.remove(render);
-      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
+      clearTimeout(resizeTimer);
     };
   }, [canvasRef, frameCount, getFrameUrl, lerpScroll, lerpFrame]);
 }
+
