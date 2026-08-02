@@ -69,9 +69,17 @@ export default function LoginPage() {
                             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                             className="p-10 rounded-[48px] bg-white/[0.02] border border-white/10 shadow-2xl backdrop-blur-3xl space-y-8 relative"
                         >
-                            {/* Demo Banner */}
-                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-accent/10 border border-accent/20 text-accent px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap flex items-center gap-2 shadow-2xl backdrop-blur-3xl">
-                                <Info size={12} /> Use: <span className="text-white">demo@system.ai</span> / <span className="text-white">demo</span>
+                            {/* Dev Credentials Banner */}
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex gap-2">
+                                <button type="button" onClick={() => { setEmail("admin@universal.ai"); setPassword("password123"); }} className="bg-accent/10 hover:bg-accent/20 border border-accent/20 text-accent px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all">
+                                    <Info size={10} /> Admin
+                                </button>
+                                <button type="button" onClick={() => { setEmail("founder@startup.com"); setPassword("password123"); }} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all">
+                                    <Info size={10} /> Startup
+                                </button>
+                                <button type="button" onClick={() => { setEmail("john@acmecorp.com"); setPassword("password123"); }} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all">
+                                    <Info size={10} /> Enterprise
+                                </button>
                             </div>
 
                             <div className="text-center">
