@@ -1,29 +1,46 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
-import { Navbar, Section, NanoCard, Footer } from "@/components/ui-nano";
+import { Navbar, Section, Card, Footer, Button, Eyebrow, H2, BodyLarge, Badge } from "@/components/ui-nano";
+import { ChatDemo } from "@/components/chat-demo";
 import { ChatWidget } from "@/components/chat-widget";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowRight, Terminal, Zap, Box, Layers, Globe, Shield, Cpu, MessageSquare, ShoppingCart, BarChart3, Check } from "lucide-react";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Terminal, Zap, Box, Layers, Globe, Shield, Cpu, MessageSquare, ShoppingCart, BarChart3, Check, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useCanvasSequence } from "@/hooks/useCanvasSequence";
+
+const AccordionItem = ({ q, a }: { q: string; a: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <div
+            className={`cursor-pointer bg-raised border rounded-[16px] transition-all duration-200 hover:border-accent/30 ${isOpen ? 'border-accent/30 shadow-[0_0_20px_-8px_rgba(0,212,216,0.2)]' : 'border-border-subtle'}`}
+            onClick={() => setIsOpen(!isOpen)}
+        >
+            <div className="p-6 md:p-7">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-[16px] md:text-[17px] font-sans font-medium text-primary pr-4">{q}</h3>
+                    <ChevronDown size={18} className={`text-accent transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+                </div>
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div 
+                            initial={{ height: 0, opacity: 0 }} 
+                            animate={{ height: "auto", opacity: 1 }} 
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            className="overflow-hidden"
+                        >
+                            <p className="pt-4 text-secondary text-[15px] leading-relaxed">{a}</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </div>
+    );
+};
 
 export default function Home() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useCanvasSequence(canvasRef, {
-    frameCount: 403,
-    getFrameUrl: (i) => `/frames/frame_${i.toString().padStart(4, "0")}.jpg`,
-    lerpScroll: 0.05,
-    lerpFrame: 0.12,
-  });
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"]
-  });
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -46,199 +63,262 @@ export default function Home() {
   }, []);
 
   return (
-    <div ref={containerRef} className="bg-black selection:bg-accent selection:text-white relative">
+    <div className="bg-base selection:bg-accent-soft selection:text-accent relative font-sans">
       <Navbar />
 
-      {/* Fixed Background Video — GPU accelerated */}
-      <div className="fixed inset-0 w-full h-full z-0 overflow-hidden bg-black">
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-cover opacity-80"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/80" />
-      </div>
-
-      <div className="relative z-10 w-full">
-
-        {/* ── CHAPTER 1: HERO ── */}
-        <div className="h-[100vh] flex items-center justify-center sticky top-0 px-6 overflow-hidden">
-          <motion.div
-            style={{
-              opacity: useTransform(scrollYProgress, [0, 0.12], [1, 0]),
-              scale: useTransform(scrollYProgress, [0, 0.12], [1, 0.88]),
-              y: useTransform(scrollYProgress, [0, 0.12], [0, -40]),
-            }}
-            className="text-center max-w-5xl"
+      {/* ── 1. HERO & CHAT DEMO ── */}
+      <div className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-12 overflow-hidden">
+        {/* Hero Video Background */}
+        <div className="absolute inset-0 w-full h-full z-0 overflow-hidden bg-base">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+            style={{ filter: 'saturate(0.4) hue-rotate(150deg)' }}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.25em] text-white/60 mb-10 backdrop-blur-md"
-            >
-              <span className="relative flex h-1.5 w-1.5 mr-1">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent" />
-              </span>
-              OmniChat Runtime v5.0
+            <source src="/0513.mp4" type="video/mp4" />
+          </video>
+          {/* Aqua tint overlay */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,212,216,0.04) 0%, rgba(12,12,15,0.7) 40%, rgba(12,12,15,0.95) 100%)' }} />
+        </div>
+
+        <div className="relative z-10 w-full max-w-[1200px] flex flex-col items-center mt-10 md:mt-0">
+          <div className="text-center max-w-4xl mx-auto mb-16">
+            <motion.div initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+              <Badge variant="accent" className="mb-8">OmniChat Runtime v5.0</Badge>
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="text-6xl md:text-[130px] font-black tracking-tighter leading-[0.85] mb-10 text-white"
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="text-5xl md:text-[88px] font-display font-bold tracking-tight leading-[1.05] text-primary mb-8"
             >
-              Cognitive <br /> <span className="opacity-30 italic">Commerce.</span>
+              The cognitive <span className="text-aqua-gradient"><br className="hidden md:block"/>commerce layer.</span>
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.3 }}
-              className="text-lg md:text-xl font-semibold max-w-xl mx-auto opacity-50 mb-14 leading-relaxed uppercase tracking-widest text-white"
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[18px] md:text-[22px] font-sans text-secondary max-w-2xl mx-auto mb-10 leading-relaxed"
             >
-              The world&apos;s first fully autonomous AI operating system for modern retail and high-end storefronts.
+              An autonomous AI operating system that bridges the gap between intention and transaction.
             </motion.p>
-          </motion.div>
-        </div>
 
-        {/* ── CHAPTER 2: AWARENESS ── */}
-        <div className="h-[100vh] flex items-center sticky top-0 px-6 overflow-hidden">
-          <div className="max-w-7xl mx-auto w-full">
             <motion.div
-              style={{
-                opacity: useTransform(scrollYProgress, [0.12, 0.18, 0.3, 0.38], [0, 1, 1, 0]),
-                x: useTransform(scrollYProgress, [0.12, 0.22], [80, 0]),
-              }}
-              className="max-w-2xl"
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center justify-center gap-4"
             >
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-accent mb-6">Intelligence Layer</p>
-              <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none text-white mb-8">
-                Total <br /> <span className="text-accent">Awareness.</span>
-              </h2>
-              <p className="text-lg font-medium text-white/50 leading-relaxed max-w-lg">
-                The AI doesn&apos;t just respond. It watches. It learns. It anticipates.
-                Tracking dwell time, hesitation, and comparison paralysis to intervene exactly when needed.
-              </p>
+              <Link href="/register">
+                <Button variant="primary" className="py-3 px-8 rounded-full font-bold" style={{ boxShadow: '0 0 32px rgba(0,212,216,0.3)' }}>Start Building</Button>
+              </Link>
+              <Link href="/docs">
+                <Button variant="secondary" className="py-3 px-8 rounded-full font-semibold">Read the Docs</Button>
+              </Link>
             </motion.div>
           </div>
         </div>
-
-        {/* ── CHAPTER 3: FEATURES GRID ── */}
-        <Section 
-            id="features"
-            subtitle="The Architecture"
-            title="Neural Capabilities"
-            className="bg-black/80 backdrop-blur-3xl z-20"
-        >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                    { icon: Cpu, title: "Cognitive Routing", desc: "Autonomous multi-agent system that routes intent to specialized sales, support, or fulfillment agents." },
-                    { icon: MessageSquare, title: "Omni-Channel Sync", desc: "Seamless message persistence across WhatsApp, Web, and Social interfaces with zero context loss." },
-                    { icon: ShoppingCart, title: "Checkout-as-Code", desc: "Deterministic state machines handle complex transactions, shipping, and payments directly in-chat." },
-                    { icon: BarChart3, title: "Predictive Analytics", desc: "Analyze customer hesitation patterns and sentiment in real-time to optimize conversion windows." },
-                    { icon: Shield, title: "Enterprise RBAC", desc: "Fine-grained access control for teams, ensuring strict data isolation across project nodes." },
-                    { icon: Globe, title: "Global Sync", desc: "Real-time product catalog synchronization with WooCommerce, Shopify, and custom backends." }
-                ].map((item, i) => (
-                    <NanoCard key={i} glow={i === 0}>
-                        <item.icon className="text-accent mb-8" size={32} />
-                        <h3 className="text-white font-black uppercase tracking-[0.2em] text-sm mb-4">{item.title}</h3>
-                        <p className="text-white/40 text-xs font-medium leading-relaxed">{item.desc}</p>
-                    </NanoCard>
-                ))}
-            </div>
-        </Section>
-
-        {/* ── CHAPTER 4: PRICING ── */}
-        <Section 
-            id="pricing"
-            subtitle="Scalability"
-            title="Select Plan"
-            className="bg-transparent z-20"
-        >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                    { name: "Starter", price: "Free", desc: "For exploring the ecosystem", features: ["1 Project Node", "500 Messages / mo", "Basic Intent Recognition", "Community Support"] },
-                    { name: "Pro", price: "$49", desc: "For growing commerce brands", features: ["5 Project Nodes", "Unlimited Messages", "WhatsApp Integration", "WooCommerce Sync", "Priority Support"], popular: true },
-                    { name: "Enterprise", price: "Custom", desc: "For global scale operations", features: ["Unlimited Nodes", "Dedicated Compute", "SLA Guarantee", "White-label Support", "24/7 Concierge"] }
-                ].map((plan, i) => (
-                    <NanoCard key={i} className={`relative overflow-hidden ${plan.popular ? "border-accent/40" : ""}`}>
-                        {plan.popular && (
-                            <div className="absolute top-0 right-0 bg-accent text-white px-4 py-1 text-[8px] font-black uppercase tracking-widest rounded-bl-xl">Popular</div>
-                        )}
-                        <h3 className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em] mb-4">{plan.name}</h3>
-                        <div className="flex items-baseline gap-2 mb-8">
-                            <span className="text-4xl font-black text-white">{plan.price}</span>
-                            {plan.price !== "Free" && plan.price !== "Custom" && <span className="text-white/20 text-xs">/ mo</span>}
-                        </div>
-                        <p className="text-white/40 text-xs mb-8">{plan.desc}</p>
-                        <div className="space-y-4 mb-10">
-                            {plan.features.map(f => (
-                                <div key={f} className="flex items-center gap-3">
-                                    <Check size={14} className="text-accent" />
-                                    <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{f}</span>
-                                </div>
-                            ))}
-                        </div>
-                        <Link href="/register" className={`w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center transition-all ${plan.popular ? "bg-accent text-white hover:scale-105" : "bg-white/5 text-white border border-white/10 hover:bg-white/10"}`}>
-                            Initialize Node
-                        </Link>
-                    </NanoCard>
-                ))}
-            </div>
-        </Section>
-
-        {/* ── CHAPTER 5: FAQ ── */}
-        <Section 
-            id="faq"
-            subtitle="Knowledge Base"
-            title="Common Inquiries"
-            className="bg-black z-20"
-        >
-            <div className="max-w-3xl mx-auto space-y-4">
-                {[
-                    { q: "How is data isolation handled?", a: "Every project is assigned a unique logical partition with separate encryption keys, ensuring multi-tenant security at the core." },
-                    { q: "Can I integrate custom ERPs?", a: "Yes. Our open Protocol API allows you to bridge any backend system to the OmniChat cognitive runtime via secure webhooks." },
-                    { q: "What is 'Checkout-as-Code'?", a: "It's our proprietary state-machine framework that converts chat intent directly into programmatic checkout objects, bypassing standard cart friction." }
-                ].map((faq, i) => (
-                    <NanoCard key={i} className="p-6">
-                        <h3 className="text-white font-black uppercase tracking-[0.1em] text-xs mb-3">{faq.q}</h3>
-                        <p className="text-white/40 text-xs leading-relaxed">{faq.a}</p>
-                    </NanoCard>
-                ))}
-            </div>
-        </Section>
-
-        {/* ── CHAPTER 6: FINAL CTA ── */}
-        <div className="h-[100vh] flex items-center justify-center sticky top-0 px-6 overflow-hidden z-10">
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
-          <motion.div
-            style={{
-              opacity: useTransform(scrollYProgress, [0.8, 0.95], [0, 1]),
-              y: useTransform(scrollYProgress, [0.8, 0.95], [60, 0]),
-            }}
-            className="text-center max-w-3xl relative z-10"
-          >
-            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-accent mb-6">Neural Activation</p>
-            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter mb-16 text-white leading-none">
-              Deploy Your First Node.
-            </h2>
-            <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <Link
-                href="/register"
-                className="px-10 py-5 bg-white text-black font-black text-xs uppercase tracking-widest rounded-full flex items-center justify-center gap-3 hover:scale-105 transition-transform active:scale-95"
-              >
-                Initialize System <ArrowRight size={16} />
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* ── FOOTER ── */}
-        <div className="relative z-20 bg-black">
-            <Footer />
-        </div>
-
       </div>
 
-      <ChatWidget primaryColor="#ffffff" />
+            {/* ── 2. SOCIAL PROOF ── */}
+            <div className="py-12 border-b border-accent/8 bg-base">
+                <div className="max-w-[1200px] mx-auto px-6 flex flex-col items-center">
+                    <p className="text-[11px] font-mono text-tertiary mb-8 uppercase tracking-widest text-center">Engineered to integrate with</p>
+                    <div className="flex flex-wrap justify-center gap-12 md:gap-24 opacity-30 hover:opacity-100 transition-all duration-700">
+                        {["WooCommerce", "Shopify", "Stripe", "WhatsApp", "Postmark"].map(brand => (
+                            <span key={brand} className="text-xl font-bold font-display text-accent hover:text-primary transition-colors duration-300">{brand}</span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── 3. NEURAL CAPABILITIES (BENTO GRID) ── */}
+            <Section 
+                id="features"
+                subtitle="Capabilities"
+                title="Engineered for scale."
+                intro="Everything you need to automate a modern storefront, built on a deterministic state machine."
+            >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Large Bento Item 1 with static chat demo */}
+                    <Card className="md:col-span-2 relative overflow-hidden flex flex-col justify-between group">
+                        <div className="mb-8">
+                            <Badge variant="neutral" className="mb-4">Routing</Badge>
+                            <h3 className="text-2xl font-display font-semibold text-primary mb-3">Cognitive Routing</h3>
+                            <p className="text-secondary leading-relaxed max-w-md">Autonomous multi-agent system that seamlessly hands off conversations between sales, support, and fulfillment agents based on user intent.</p>
+                        </div>
+                        <div className="mt-auto -mb-8 -mx-8 pl-8 pt-8 md:pl-16 md:pt-16 border-t border-l border-border-subtle rounded-tl-[24px] bg-base shadow-2xl translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <ChatDemo isStatic={true} conversation={[
+                                { id: "1", role: "user", content: "My shirt arrived torn." },
+                                { id: "2", role: "assistant", content: "I'm so sorry about that. Handing you over to Returns." },
+                                { id: "3", role: "assistant", content: "Returns Agent: I've generated a prepaid label for you. Would you like a refund or replacement?" },
+                            ]} />
+                        </div>
+                    </Card>
+
+                    {/* Standard Bento Items */}
+                    <Card data-reveal className="flex flex-col relative overflow-hidden group">
+                        <ShoppingCart className="text-accent mb-6" size={24} />
+                        <h3 className="text-[18px] font-display font-semibold text-primary mb-3">Checkout-as-Code</h3>
+                        <p className="text-secondary leading-relaxed text-[15px]">Handle complex transactions, variant selections, and payments securely inside the chat interface.</p>
+                        <div className="absolute inset-0 bg-gradient-to-t from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </Card>
+
+                    <Card data-reveal className="flex flex-col relative overflow-hidden group">
+                        <Globe className="text-accent mb-6" size={24} />
+                        <h3 className="text-[18px] font-display font-semibold text-primary mb-3">Global Sync</h3>
+                        <p className="text-secondary leading-relaxed text-[15px]">Real-time product catalog synchronization with your existing e-commerce backends and inventory management systems.</p>
+                        <div className="absolute inset-0 bg-gradient-to-t from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </Card>
+
+                    {/* Large Bento Item 2 */}
+                    <Card data-reveal className="md:col-span-2 relative overflow-hidden flex flex-col justify-center group">
+                        <div className="absolute right-0 bottom-0 opacity-10 blur-xl group-hover:opacity-30 transition-opacity duration-500 w-64 h-64 bg-accent rounded-full translate-x-1/3 translate-y-1/3"></div>
+                        <BarChart3 className="text-accent mb-6" size={24} />
+                        <h3 className="text-2xl font-display font-semibold text-primary mb-3">Predictive Analytics</h3>
+                        <p className="text-secondary leading-relaxed max-w-lg text-[15px]">Analyze customer hesitation patterns and sentiment in real-time to optimize conversion windows and trigger proactive engagement.</p>
+                    </Card>
+                </div>
+            </Section>
+
+            {/* ── 4. HOW IT WORKS ── */}
+            <Section 
+                id="how-it-works"
+                className="bg-raised border-y border-border-subtle"
+            >
+                <div className="max-w-[1000px] mx-auto">
+                    <div className="mb-16">
+                        <Eyebrow className="text-secondary mb-4">Integration</Eyebrow>
+                        <H2 className="text-primary">Deploy in minutes.</H2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+                        <div className="hidden md:block absolute top-[24px] left-[15%] right-[15%] h-[1px] bg-border-subtle z-0" />
+                        
+                        {[
+                            { step: "01", title: "Connect Catalog", desc: "Sync your store via our native integrations or API." },
+                            { step: "02", title: "Train Models", desc: "Our system automatically indexes your products, policies, and FAQs." },
+                            { step: "03", title: "Deploy Widget", desc: "Embed the 14kb script on your site or connect WhatsApp." }
+                        ].map((item, i) => (
+                            <div key={item.step} data-reveal className="relative z-10 flex flex-col items-start" style={{ animationDelay: `${i * 0.1}s` }}>
+                                <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/25 flex items-center justify-center text-accent font-mono font-bold text-[14px] mb-6">
+                                    {item.step}
+                                </div>
+                                <h3 className="text-[18px] font-display font-semibold text-primary mb-3">{item.title}</h3>
+                                <p className="text-secondary text-[15px] leading-relaxed">{item.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </Section>
+
+            {/* ── 5. TOTAL AWARENESS ── */}
+            <Section className="py-40">
+                <div className="max-w-3xl mx-auto text-center" data-reveal>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-full mb-8">
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                        <span className="text-[12px] font-mono text-accent uppercase tracking-widest">The Operating System</span>
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-display font-bold text-primary leading-[1.1] tracking-tight mb-8">
+                        The AI doesn&apos;t just respond.<br /><span className="text-aqua-gradient">It watches. It learns.</span>
+                    </h2>
+                    <p className="text-xl text-secondary leading-relaxed">
+                        OmniChat tracks dwell time, hesitation, and comparison paralysis to intervene exactly when needed. It turns a static storefront into an active, consultative sales floor.
+                    </p>
+                </div>
+            </Section>
+
+            {/* ── 6. PRICING ── */}
+            <Section 
+                id="pricing"
+                subtitle="Scalability"
+                title="Predictable pricing."
+            >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[
+                        { name: "Starter", price: "Free", desc: "For exploring the ecosystem.", features: ["1 Project Node", "500 Messages / mo", "Basic Intent Recognition", "Community Support"], cta: "Get started", variant: "secondary" },
+                        { name: "Pro", price: "$49", desc: "For growing commerce brands.", features: ["5 Project Nodes", "Unlimited Messages", "WhatsApp Integration", "WooCommerce Sync"], cta: "Start Pro Trial", variant: "primary", popular: true },
+                        { name: "Enterprise", price: "Custom", desc: "For global scale operations.", features: ["Unlimited Nodes", "Dedicated Compute", "SLA Guarantee", "24/7 Concierge"], cta: "Contact Sales", variant: "secondary" }
+                    ].map((plan, i) => (
+                        <Card data-reveal key={i} className={`flex flex-col h-full relative ${plan.popular ? 'border-accent/40 shadow-[0_0_60px_-15px_rgba(0,212,216,0.3)]' : 'group hover:border-accent/20'}`}>
+                            {plan.popular && (
+                                <div className="absolute -top-3 right-6">
+                                    <span className="bg-accent text-base text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Recommended</span>
+                                </div>
+                            )}
+                            <h3 className="text-[16px] font-mono font-medium text-primary mb-4">{plan.name}</h3>
+                            <div className="flex items-baseline gap-2 mb-4">
+                                <span className={`text-5xl font-display font-bold ${plan.popular ? 'text-aqua-gradient' : 'text-primary'}`}>{plan.price}</span>
+                                {plan.price !== "Free" && plan.price !== "Custom" && <span className="text-secondary text-[14px]">/ mo</span>}
+                            </div>
+                            <p className="text-secondary text-[14px] mb-8">{plan.desc}</p>
+                            
+                            <div className="space-y-4 mb-10 flex-grow">
+                                {plan.features.map(f => (
+                                    <div key={f} className="flex items-center gap-3">
+                                        <Check size={16} className="text-accent" />
+                                        <span className="text-[14px] text-primary">{f}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <Button variant={plan.variant} className="w-full py-2.5" style={plan.popular ? { boxShadow: '0 0 24px rgba(0,212,216,0.25)' } : {}}>
+                                {plan.cta}
+                            </Button>
+                        </Card>
+                    ))}
+                </div>
+            </Section>
+
+            {/* ── 7. FAQ ── */}
+            <Section 
+                id="faq"
+                subtitle="Knowledge Base"
+                title="Common inquiries."
+            >
+                <div className="max-w-3xl mx-auto space-y-4" data-reveal>
+                    <AccordionItem 
+                        q="How is data isolation handled?" 
+                        a="Every project is assigned a unique logical partition with separate encryption keys, ensuring strict multi-tenant security and RBAC enforcement at the database level." 
+                    />
+                    <AccordionItem 
+                        q="Can I integrate custom ERPs?" 
+                        a="Yes. Our open Protocol API allows you to bridge any backend system to the OmniChat cognitive runtime via secure webhooks and REST endpoints." 
+                    />
+                    <AccordionItem 
+                        q="What is 'Checkout-as-Code'?" 
+                        a="It's our proprietary state-machine framework that converts chat intent directly into programmatic checkout objects, bypassing standard cart friction and enabling one-click purchasing in-thread." 
+                    />
+                </div>
+            </Section>
+
+            {/* ── 8. FINAL CTA ── */}
+            <Section className="py-32 border-b border-accent/8 bg-raised">
+                <div className="text-center max-w-3xl mx-auto" data-reveal>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-full mb-8">
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                        <span className="text-[11px] font-mono text-accent uppercase tracking-widest">Ready when you are</span>
+                    </div>
+                    <h2 className="text-3xl md:text-5xl font-display font-bold text-primary tracking-tight mb-4">
+                        Deploy in <span className="text-aqua-gradient">minutes.</span>
+                    </h2>
+                    <p className="text-secondary text-[17px] mb-10 leading-relaxed">No credit card. No lock-in. Just smarter commerce.</p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Link href="/register">
+                            <Button variant="primary" className="px-10 py-3.5 rounded-full font-bold w-full sm:w-auto text-[15px]" style={{ boxShadow: '0 0 40px rgba(0,212,216,0.3)' }}>Get started for free</Button>
+                        </Link>
+                        <Link href="/contact">
+                            <Button variant="secondary" className="px-10 py-3.5 rounded-full font-bold w-full sm:w-auto text-[15px]">Contact Sales</Button>
+                        </Link>
+                    </div>
+                </div>
+            </Section>
+
+            {/* ── FOOTER ── */}
+            <Footer />
+      <ChatWidget primaryColor="#00D4D8" />
     </div>
   );
 }

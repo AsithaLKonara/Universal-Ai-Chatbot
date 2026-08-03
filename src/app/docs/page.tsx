@@ -35,7 +35,7 @@ export default function DocsPage() {
 
                         <div className="space-y-20 pt-10">
                             <section className="space-y-8">
-                                <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-accent">01 / Universal SDK</h2>
+                                <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-ion">01 / Universal SDK</h2>
                                 <p className="text-sm opacity-50 leading-relaxed max-w-2xl">
                                     The easiest way to integrate. Embed our lightweight bridge script into your HTML for full context-aware chat capabilities.
                                 </p>
@@ -61,7 +61,7 @@ export default function DocsPage() {
                             </section>
 
                             <section className="space-y-8">
-                                <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-accent">02 / Neural API</h2>
+                                <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-ion">02 / Neural API</h2>
                                 <p className="text-sm opacity-50 leading-relaxed max-w-2xl">
                                     Full control for custom implementations. Interface directly with our sub-second inference cluster via standardized REST protocols.
                                 </p>
@@ -80,17 +80,17 @@ export default function DocsPage() {
                     </div>
 
                     <aside className="w-full md:w-[400px] space-y-6">
-                        <NanoCard className="p-10 space-y-8 border-accent/20 bg-accent/[0.03]">
-                            <div className="w-12 h-12 bg-accent text-white rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                        <NanoCard className="p-10 space-y-8 border-ion/20 bg-ion/[0.03]">
+                            <div className="w-12 h-12 bg-ion text-white rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)]">
                                 <Shield size={24} />
                             </div>
                             <h4 className="text-2xl font-black uppercase tracking-tightest">Secure Ops.</h4>
                             <p className="text-xs font-bold opacity-30 leading-relaxed uppercase tracking-widest">
                                 All communication is authorized via project-specific Neural Keys. Data is encrypted in transit and at rest.
                             </p>
-                            <div className="pt-4 border-t border-accent/10 flex items-center justify-between">
+                            <div className="pt-4 border-t border-ion/10 flex items-center justify-between">
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-20">Latency</span>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-accent">&lt; 400ms</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-ion">&lt; 400ms</span>
                             </div>
                         </NanoCard>
                         

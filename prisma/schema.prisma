@@ -81,6 +81,7 @@ model Project {
   knowledge   Knowledge[]
   conversations Conversation[]
   customers     Customer[]
+  handoffs      HandoffTicket[]
   checkoutSessions CheckoutSession[]
   carts         Cart[]
   
@@ -226,4 +227,18 @@ model ProjectMember {
   @@unique([userId, projectId])
   @@index([projectId])
   @@index([userId])
+}
+
+model HandoffTicket {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  sessionId String
+  customerName String?
+  status    String   @default("queued") // queued, claimed, resolved
+  claimedBy String?  // ID of the user (agent) who claimed it
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, status])
 }
