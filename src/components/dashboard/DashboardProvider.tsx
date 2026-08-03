@@ -1,11 +1,13 @@
 "use client";
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useCallback, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 
 export interface Project { 
     id: string; 
     name: string; 
     apiKey: string; 
+    projectRole: string;
     conversations: number; 
     tokens: number; 
     createdAt: string; 
@@ -28,53 +30,46 @@ interface DashboardContextType {
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
-function authHeaders() {
+const fetcher = async (url: string) => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
-    return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-}
+    if (!token) throw new Error("Unauthorized");
+    const res = await fetch(url, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+    });
+    if (res.status === 401) {
+        localStorage.removeItem("token");
+        if (typeof document !== 'undefined') {
+            document.cookie = 'token=; Max-Age=0; path=/';
+        }
+        throw new Error("Unauthorized");
+    }
+    if (!res.ok) throw new Error("Connection Failure");
+    return res.json();
+};
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
-    const [data, setData] = useState<DashboardData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data, error, isLoading, mutate } = useSWR<DashboardData>("/api/user/dashboard", fetcher);
 
-    const fetchData = useCallback(async () => {
-        const token = localStorage.getItem("token");
-        if (!token) { router.push("/login"); return; }
-        try {
-            const res = await fetch("/api/user/dashboard", { headers: authHeaders() });
-            if (res.status === 401) { 
-                localStorage.removeItem("token"); 
-                router.push("/login"); 
-                return; 
-            }
-            if (!res.ok) throw new Error("Connection Failure");
-            const json = await res.json();
-            setData(json);
-        } catch (e: any) { 
-            setError(e.message); 
-        } finally { 
-            setLoading(false); 
+    useEffect(() => {
+        if (error?.message === "Unauthorized") {
+            router.push("/login");
         }
-    }, [router]);
-
-    useEffect(() => { 
-        fetchData(); 
-    }, [fetchData]);
+    }, [error, router]);
 
     const logout = useCallback(() => {
         localStorage.removeItem("token");
+        document.cookie = 'token=; Max-Age=0; path=/';
         router.push("/login");
     }, [router]);
 
     return (
         <DashboardContext.Provider value={{
-            data,
+            data: data || null,
             projects: data?.projects || [],
-            loading,
-            error,
-            refreshData: fetchData,
+            loading: isLoading,
+            error: error?.message || null,
+            refreshData: async () => { await mutate(); },
             logout
         }}>
             {children}

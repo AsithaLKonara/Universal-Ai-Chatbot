@@ -14,34 +14,46 @@ async function main() {
         update: {},
         create: {
             email: 'admin@universal.ai',
-            name: 'System Admin',
+            name: 'Super Admin',
             password: passwordHash,
             role: 'ADMIN',
             plan: 'ENTERPRISE',
         },
     });
 
-    const standardUser = await prisma.user.upsert({
-        where: { email: 'founder@startup.com' },
+    const ownerUser = await prisma.user.upsert({
+        where: { email: 'owner@startup.com' },
         update: {},
         create: {
-            email: 'founder@startup.com',
-            name: 'Startup Founder',
+            email: 'owner@startup.com',
+            name: 'Tenant Owner',
             password: passwordHash,
             role: 'USER',
             plan: 'PRO',
         },
     });
 
-    const enterpriseUser = await prisma.user.upsert({
-        where: { email: 'john@acmecorp.com' },
+    const agentUser = await prisma.user.upsert({
+        where: { email: 'agent@startup.com' },
         update: {},
         create: {
-            email: 'john@acmecorp.com',
-            name: 'John Doe',
+            email: 'agent@startup.com',
+            name: 'Support Agent',
             password: passwordHash,
             role: 'USER',
-            plan: 'ENTERPRISE',
+            plan: 'PRO',
+        },
+    });
+
+    const viewerUser = await prisma.user.upsert({
+        where: { email: 'viewer@startup.com' },
+        update: {},
+        create: {
+            email: 'viewer@startup.com',
+            name: 'Data Viewer',
+            password: passwordHash,
+            role: 'USER',
+            plan: 'PRO',
         },
     });
 
@@ -51,7 +63,7 @@ async function main() {
     const startupProject = await prisma.project.create({
         data: {
             name: 'Startup E-commerce Bot',
-            userId: standardUser.id,
+            userId: ownerUser.id,
             whatsappEnabled: true,
             wooCommerceEnabled: true,
             wooCommerceStoreUrl: 'https://startup-store.com',
@@ -75,9 +87,10 @@ async function main() {
     // 3. Setup RBAC Project Memberships
     await prisma.projectMember.createMany({
         data: [
-            { userId: standardUser.id, projectId: startupProject.id, role: ProjectRole.OWNER },
+            { userId: ownerUser.id, projectId: startupProject.id, role: ProjectRole.OWNER },
+            { userId: agentUser.id, projectId: startupProject.id, role: ProjectRole.EDITOR },
+            { userId: viewerUser.id, projectId: startupProject.id, role: ProjectRole.VIEWER },
             { userId: adminUser.id, projectId: enterpriseWorkspace.id, role: ProjectRole.OWNER },
-            { userId: enterpriseUser.id, projectId: enterpriseWorkspace.id, role: ProjectRole.EDITOR },
         ],
         skipDuplicates: true
     });

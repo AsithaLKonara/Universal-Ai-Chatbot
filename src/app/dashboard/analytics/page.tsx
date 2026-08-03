@@ -32,33 +32,33 @@ function StatCard({
     label,
     value,
     sub,
-    accent = false,
+    ion = false,
     warn = false,
 }: {
     icon: any;
     label: string;
     value: string;
     sub?: string;
-    accent?: boolean;
+    ion?: boolean;
     warn?: boolean;
 }) {
     return (
         <div
-            className={`p-6 rounded-[32px] border transition-all group nano-glass space-y-4
-                ${warn ? "border-orange-500/30 hover:border-orange-500/60" : 
-                  accent ? "border-blue-500/30 hover:border-blue-500/60" : 
-                  "border-foreground/10 hover:border-foreground/30"}`}
+            className={`p-6 rounded-[24px] border transition-all group bg-raised space-y-4
+                ${warn ? "border-orange-500/30 hover:border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.05)] hover:shadow-[0_0_30px_rgba(249,115,22,0.1)]" : 
+                  ion ? "border-accent/30 hover:border-accent/60 shadow-[0_0_20px_rgba(0,212,216,0.05)] hover:shadow-[0_0_30px_rgba(0,212,216,0.1)]" : 
+                  "border-border-subtle hover:border-accent/20"}`}
         >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity
-                ${warn ? "bg-orange-500/10 text-orange-400" : 
-                  accent ? "bg-blue-500/10 text-blue-400" : 
-                  "bg-foreground/5"}`}>
+            <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity border
+                ${warn ? "bg-orange-500/10 text-orange-400 border-orange-500/20" : 
+                  ion ? "bg-accent/10 text-accent border-accent/20" : 
+                  "bg-overlay text-secondary border-border-subtle group-hover:text-primary"}`}>
                 <Icon size={18} />
             </div>
             <div className="space-y-1">
-                <div className="text-3xl font-black tracking-tighter">{value}</div>
-                <div className="text-[10px] font-black uppercase tracking-widest opacity-30">{label}</div>
-                {sub && <div className="text-[9px] opacity-20 uppercase tracking-widest font-bold">{sub}</div>}
+                <div className="text-3xl font-display font-bold text-primary tracking-tight">{value}</div>
+                <div className="text-[11px] font-mono uppercase tracking-widest text-secondary">{label}</div>
+                {sub && <div className="text-[10px] font-mono text-tertiary uppercase tracking-widest">{sub}</div>}
             </div>
         </div>
     );
@@ -67,11 +67,11 @@ function StatCard({
 function IntentBar({ label, value, color }: { label: string; value: number; color: string }) {
     return (
         <div className="space-y-2">
-            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                <span className="opacity-40">{label}</span>
-                <span className="opacity-60">{Math.round(value * 100)}%</span>
+            <div className="flex justify-between text-[11px] font-mono uppercase tracking-widest">
+                <span className="text-secondary">{label}</span>
+                <span className="text-primary">{Math.round(value * 100)}%</span>
             </div>
-            <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
+            <div className="h-2 bg-overlay rounded-full overflow-hidden border border-border-subtle">
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${value * 100}%` }}
@@ -85,9 +85,9 @@ function IntentBar({ label, value, color }: { label: string; value: number; colo
 
 function ActionBadge({ label, count, color }: { label: string; count: number; color: string }) {
     return (
-        <div className={`flex items-center justify-between px-5 py-3 rounded-2xl border ${color}`}>
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</span>
-            <span className="text-lg font-black">{count}</span>
+        <div className={`flex items-center justify-between px-5 py-3 rounded-[12px] border bg-raised ${color}`}>
+            <span className="text-[11px] font-mono uppercase tracking-widest">{label}</span>
+            <span className="text-[16px] font-display font-semibold">{count}</span>
         </div>
     );
 }
@@ -157,15 +157,15 @@ export default function AnalyticsPage() {
             >
                 {/* Header */}
                 <div>
-                    <h1 className="text-4xl font-black uppercase tracking-tightest">Analytics.</h1>
-                    <p className="text-xs font-bold opacity-30 uppercase tracking-widest mt-1">
+                    <h1 className="text-4xl font-display font-bold tracking-tight text-primary">Analytics.</h1>
+                    <p className="text-[13px] font-mono text-tertiary uppercase tracking-widest mt-1">
                         Predictive Intelligence · ROI Dashboard
                     </p>
                 </div>
 
                 {/* ROI KPIs */}
                 <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 px-2 mb-4">
+                    <h3 className="text-[11px] font-mono uppercase tracking-widest text-tertiary px-2 mb-4">
                         Revenue Intelligence
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -174,14 +174,14 @@ export default function AnalyticsPage() {
                             label="Total Revenue"
                             value={`$${(roi.totalRevenue / 1000).toFixed(1)}k`}
                             sub="All channels"
-                            accent
+                            ion
                         />
                         <StatCard
                             icon={Zap}
                             label="AI-Assisted Revenue"
                             value={`$${(roi.aiAssistedRevenue / 1000).toFixed(1)}k`}
                             sub="Commerce loop"
-                            accent
+                            ion
                         />
                         <StatCard
                             icon={BarChart3}
@@ -194,7 +194,7 @@ export default function AnalyticsPage() {
                             label="ROI Multiplier"
                             value={`${roi.roiMultiplier.toFixed(0)}x`}
                             sub="Revenue per cost $"
-                            accent
+                            ion
                         />
                     </div>
                 </div>
@@ -202,47 +202,47 @@ export default function AnalyticsPage() {
                 {/* Predictive Signals */}
                 <div className="grid md:grid-cols-2 gap-6">
                     {/* Intent & Risk Bars */}
-                    <div className="p-8 rounded-[40px] border border-foreground/10 nano-glass space-y-6">
-                        <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">
+                    <div className="p-8 rounded-[24px] border border-border-subtle bg-raised space-y-6">
+                        <div className="text-[11px] font-mono uppercase tracking-widest text-tertiary">
                             Predictive Signals
                         </div>
                         <IntentBar
                             label="Avg Purchase Intent"
                             value={signals.avgPurchaseIntent}
-                            color="bg-blue-500"
+                            color="bg-accent"
                         />
                         <IntentBar
                             label="Avg Abandonment Risk"
                             value={signals.avgAbandonmentRisk}
-                            color="bg-orange-400"
+                            color="bg-orange-500"
                         />
-                        <div className="pt-2 border-t border-foreground/5 text-[9px] opacity-20 font-bold uppercase tracking-widest">
+                        <div className="pt-4 border-t border-border-subtle text-[11px] text-tertiary font-mono uppercase tracking-widest">
                             Based on {signals.totalSessions.toLocaleString()} sessions
                         </div>
                     </div>
 
                     {/* AI Intervention Breakdown */}
-                    <div className="p-8 rounded-[40px] border border-foreground/10 nano-glass space-y-4">
-                        <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-2">
+                    <div className="p-8 rounded-[24px] border border-border-subtle bg-raised space-y-4">
+                        <div className="text-[11px] font-mono uppercase tracking-widest text-tertiary mb-4">
                             AI Intervention Actions
                         </div>
                         <ActionBadge
                             label="Accelerate (High Intent)"
                             count={signals.accelerateCount}
-                            color="border-blue-500/20 text-blue-400"
+                            color="border-accent/20 text-accent bg-accent/5"
                         />
                         <ActionBadge
                             label="Rescue (Abandonment Risk)"
                             count={signals.rescueCount}
-                            color="border-orange-500/20 text-orange-400"
+                            color="border-orange-500/20 text-orange-400 bg-orange-500/5"
                         />
                         <ActionBadge
                             label="Nurture (Engaged)"
                             count={signals.nurtureCount}
-                            color="border-foreground/10"
+                            color="border-border-subtle text-secondary bg-overlay"
                         />
-                        <div className="flex items-center gap-2 pt-1 text-[9px] opacity-20 font-bold uppercase tracking-widest">
-                            <AlertTriangle size={10} />
+                        <div className="flex items-center gap-2 pt-2 text-[11px] text-tertiary font-mono uppercase tracking-widest">
+                            <AlertTriangle size={14} className="text-orange-400" />
                             <span>
                                 {Math.round((signals.rescueCount / signals.totalSessions) * 100)}% sessions
                                 flagged for rescue
@@ -252,10 +252,10 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Commerce Event Funnel */}
-                <div className="p-8 rounded-[40px] border border-foreground/10 nano-glass space-y-5">
+                <div className="p-8 rounded-[24px] border border-border-subtle bg-raised space-y-6">
                     <div className="flex items-center gap-2">
-                        <Activity size={14} className="opacity-30" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">
+                        <Activity size={16} className="text-tertiary" />
+                        <span className="text-[11px] font-mono uppercase tracking-widest text-tertiary">
                             Commerce Event Funnel
                         </span>
                     </div>
@@ -263,22 +263,22 @@ export default function AnalyticsPage() {
                         {topEvents.map((ev, i) => {
                             const pct = (ev.count / maxEventCount) * 100;
                             return (
-                                <div key={i} className="space-y-1.5">
-                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                                        <span className="opacity-40 font-mono">{ev.name}</span>
-                                        <span className="opacity-60">{ev.count.toLocaleString()}</span>
+                                <div key={i} className="space-y-2">
+                                    <div className="flex justify-between text-[11px] font-mono uppercase tracking-widest">
+                                        <span className="text-secondary">{ev.name}</span>
+                                        <span className="text-primary">{ev.count.toLocaleString()}</span>
                                     </div>
-                                    <div className="h-1.5 bg-foreground/5 rounded-full overflow-hidden">
+                                    <div className="h-1.5 bg-overlay rounded-full overflow-hidden border border-border-subtle">
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${pct}%` }}
                                             transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }}
                                             className={`h-full rounded-full ${
-                                                i === 0 ? "bg-blue-500" :
-                                                i === 1 ? "bg-blue-400/70" :
-                                                i === 2 ? "bg-blue-300/60" :
-                                                i === 3 ? "bg-orange-400" :
-                                                "bg-foreground/30"
+                                                i === 0 ? "bg-accent" :
+                                                i === 1 ? "bg-accent/70" :
+                                                i === 2 ? "bg-accent/50" :
+                                                i === 3 ? "bg-orange-500" :
+                                                "bg-border-strong"
                                             }`}
                                         />
                                     </div>
@@ -297,22 +297,22 @@ export default function AnalyticsPage() {
                             return cartEvents > 0 ? ((abandoned / cartEvents) * 100).toFixed(1) : "0.0";
                         })();
                         return (
-                            <div className="flex gap-6 pt-4 border-t border-foreground/5">
+                            <div className="flex gap-8 pt-6 border-t border-border-subtle">
                                 <div>
-                                    <div className="text-lg font-black text-blue-400">{convRate}%</div>
-                                    <div className="text-[9px] opacity-20 font-bold uppercase tracking-widest">
+                                    <div className="text-xl font-display font-bold text-accent">{convRate}%</div>
+                                    <div className="text-[11px] text-tertiary font-mono uppercase tracking-widest mt-1">
                                         View → Order Rate
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-lg font-black text-orange-400">{abandonRate}%</div>
-                                    <div className="text-[9px] opacity-20 font-bold uppercase tracking-widest">
+                                    <div className="text-xl font-display font-bold text-orange-500">{abandonRate}%</div>
+                                    <div className="text-[11px] text-tertiary font-mono uppercase tracking-widest mt-1">
                                         Cart Abandon Rate
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-lg font-black">{signals.totalSessions.toLocaleString()}</div>
-                                    <div className="text-[9px] opacity-20 font-bold uppercase tracking-widest">
+                                    <div className="text-xl font-display font-bold text-primary">{signals.totalSessions.toLocaleString()}</div>
+                                    <div className="text-[11px] text-tertiary font-mono uppercase tracking-widest mt-1">
                                         Total Sessions
                                     </div>
                                 </div>
