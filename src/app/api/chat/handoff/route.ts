@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
     try {
@@ -21,6 +21,16 @@ export async function POST(req: Request) {
         // Store mapping with a 10-minute expiration
         await redis.set(`handoff:${code}`, JSON.stringify({ sessionId, customerId, projectId }));
         await redis.expire(`handoff:${code}`, 600); 
+
+        // Also create a persistent database ticket for the dashboard inbox
+        await prisma.handoffTicket.create({
+            data: {
+                sessionId,
+                projectId,
+                customerName: customerId, // Assuming customerId is string, could be name or ID
+                status: "queued"
+            }
+        });
 
         return NextResponse.json({ code, expires_in: 600 });
     } catch (err) {
