@@ -24,17 +24,15 @@ export interface AnalyticsData {
 
 export class AnalyticsService {
     public static async getProjectStats(projectId: string): Promise<AnalyticsData> {
-        const [checkouts, carts, usage, events] = await Promise.all([
-            prisma.checkoutSession.findMany({ where: { projectId } }),
-            prisma.cart.findMany({ where: { projectId }, include: { items: true } }),
-            prisma.usage.findMany({ where: { projectId } }),
-            prisma.systemEvent.findMany({ 
-                where: { 
-                    projectId,
-                    type: { in: [OmniEvent.OUTCOME_SIGNAL, OmniEvent.PRODUCT_VIEWED, OmniEvent.CART_UPDATED, OmniEvent.CHECKOUT_STARTED, OmniEvent.ORDER_CREATED, OmniEvent.CART_ABANDONED_POTENTIAL] }
-                } 
-            })
-        ]);
+        const checkouts = await prisma.checkoutSession.findMany({ where: { projectId } });
+        const carts = await prisma.cart.findMany({ where: { projectId }, include: { items: true } });
+        const usage = await prisma.usage.findMany({ where: { projectId } });
+        const events = await prisma.systemEvent.findMany({ 
+            where: { 
+                projectId,
+                type: { in: [OmniEvent.OUTCOME_SIGNAL, OmniEvent.PRODUCT_VIEWED, OmniEvent.CART_UPDATED, OmniEvent.CHECKOUT_STARTED, OmniEvent.ORDER_CREATED, OmniEvent.CART_ABANDONED_POTENTIAL] }
+            } 
+        });
 
         const completed = checkouts.filter(c => c.status === "completed");
         const totalRevenue = carts

@@ -30,9 +30,25 @@ export async function middleware(request: NextRequest) {
     try {
         const { payload } = await jwtVerify(token, SECRET);
         
-        // RBAC logic example
-        if (pathname.startsWith("/admin") && payload.role !== "ADMIN" && payload.role !== "OWNER") {
+        // Super Admin only routes
+        if (pathname.startsWith("/dashboard/admin") && payload.role !== "ADMIN" && payload.role !== "OWNER") {
             return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+
+        // If they hit the root dashboard, redirect to their specific view based on role
+        if (pathname === "/dashboard") {
+            if (payload.role === "ADMIN" || payload.role === "OWNER") {
+                return NextResponse.redirect(new URL("/dashboard/admin/tenants", request.url));
+            }
+            
+            const memberships = payload.memberships as Array<{ projectId: string; role: string }> | undefined;
+            if (memberships && memberships.length > 0) {
+                // If they are only an EDITOR, route them to inbox
+                const primaryRole = memberships[0].role;
+                if (primaryRole === "EDITOR") {
+                    return NextResponse.redirect(new URL("/dashboard/inbox", request.url));
+                }
+            }
         }
 
         const response = NextResponse.next();
