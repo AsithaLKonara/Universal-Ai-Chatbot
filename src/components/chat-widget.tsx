@@ -288,7 +288,7 @@ export function ChatWidget({
                         onClick={() => setIsOpen(true)}
                         className="w-16 h-16 bg-white text-black rounded-[24px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] flex items-center justify-center group relative overflow-hidden"
                     >
-                        <div className="absolute inset-0 bg-accent opacity-0 group-hover:opacity-10 transition-opacity" />
+                        <div className="absolute inset-0 bg-ion opacity-0 group-hover:opacity-10 transition-opacity" />
                         <MessageCircle size={28} className="relative z-10" />
                         <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 border-2 border-white rounded-full z-20 shadow-lg" />
                     </motion.button>
