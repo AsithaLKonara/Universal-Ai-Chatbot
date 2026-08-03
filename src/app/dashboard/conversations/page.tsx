@@ -62,60 +62,49 @@ function ConversationsContent() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
-                        <h1 className="text-4xl font-black uppercase tracking-tightest">Signals.</h1>
-                        <p className="text-xs font-bold opacity-30 uppercase tracking-widest mt-1">Live Interaction Stream</p>
+                        <h1 className="text-4xl font-display font-bold tracking-tight text-primary">Conversations.</h1>
+                        <p className="text-[13px] font-mono text-tertiary uppercase tracking-widest mt-1">Live Interaction Logs</p>
                     </div>
                     <div className="flex gap-3 items-center">
                         <select
                             value={filterProject}
                             onChange={e => { setFilterProject(e.target.value); setConvPage(0); }}
-                            className="bg-foreground/5 border border-foreground/10 rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-tighter outline-none"
+                            className="bg-raised border border-border-subtle rounded-[12px] px-4 py-2.5 text-[13px] font-medium text-primary outline-none hover:border-accent/20 focus:border-accent transition-colors"
                         >
-                            <option value="">ALL NODES</option>
+                            <option value="">ALL PROJECTS</option>
                             {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
-                        <button onClick={() => fetchConversations(convPage, filterProject)} className="p-2.5 bg-foreground/5 rounded-xl opacity-40 hover:opacity-100 transition-opacity">
+                        <button onClick={() => fetchConversations(convPage, filterProject)} className="p-2.5 bg-overlay border border-border-subtle text-secondary rounded-[12px] hover:text-accent hover:border-accent/30 transition-all">
                             <RefreshCw size={16} />
                         </button>
                     </div>
                 </div>
 
                 {conversations.length === 0 ? (
-                    <div className="rounded-[40px] border border-dashed border-foreground/10 p-20 text-center opacity-30">
-                        <MessageSquare size={40} className="mx-auto mb-5" />
-                        <p className="text-xs font-black uppercase tracking-widest">No active communication signals detected.</p>
+                    <div className="rounded-[24px] border border-dashed border-border-subtle p-20 text-center text-tertiary">
+                        <MessageSquare size={40} className="mx-auto mb-5 opacity-50" />
+                        <p className="text-[13px] font-medium text-secondary">No active conversations found.</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         {conversations.map(c => (
-                            <div key={c.id} className="p-8 rounded-[32px] border border-foreground/10 space-y-6 bg-foreground/[0.01] hover:border-foreground/30 transition-all group overflow-hidden">
+                            <div key={c.id} className="p-8 rounded-[24px] border border-border-subtle bg-raised hover:border-accent/30 hover:shadow-[0_4px_30px_rgba(0,212,216,0.05)] transition-all group overflow-hidden">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-accent bg-accent/10 px-3 py-1 rounded-full">{c.project.name}</span>
+                                        <span className="text-[11px] font-mono uppercase tracking-widest text-accent bg-accent/10 px-3 py-1 rounded-full">{c.project.name}</span>
                                     </div>
-                                    <span className="text-[10px] opacity-30 font-bold uppercase tracking-widest font-mono">{timeAgo(c.createdAt)}</span>
+                                    <span className="text-[11px] text-tertiary font-mono uppercase tracking-widest">{timeAgo(c.createdAt)}</span>
                                 </div>
                                 <div className="space-y-4">
-                                    <div className="flex gap-5">
-                                        <div className="w-8 h-8 rounded-full bg-foreground/5 flex-shrink-0 flex items-center justify-center text-[10px] font-black opacity-30">URS</div>
-                                        <p className="text-sm font-medium opacity-90 leading-relaxed pt-1.5">{c.message}</p>
+                                    <div className="flex gap-4">
+                                        <div className="w-8 h-8 rounded-full bg-overlay flex-shrink-0 flex items-center justify-center text-[11px] font-mono text-tertiary border border-border-subtle">USR</div>
+                                        <p className="text-[14px] text-primary leading-relaxed pt-1.5">{c.message}</p>
                                     </div>
-                                    <div className="flex gap-5">
-                                        <div className="w-8 h-8 rounded-full bg-accent/20 flex-shrink-0 flex items-center justify-center text-[10px] font-black text-accent shadow-[0_0_10px_rgba(59,130,246,0.2)]">AI</div>
-                                        <div className="text-sm font-medium opacity-60 leading-relaxed pt-1.5 prose-invert max-w-none">
-                                            <ReactMarkdown 
-                                                components={{
-                                                    p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                                                    ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
-                                                    ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
-                                                    li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                                                    h1: ({node, ...props}) => <h1 className="text-lg font-black uppercase tracking-tight mb-2" {...props} />,
-                                                    h2: ({node, ...props}) => <h2 className="text-base font-black uppercase tracking-tight mb-2" {...props} />,
-                                                    code: ({node, ...props}) => <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono" {...props} />,
-                                                    pre: ({node, ...props}) => <pre className="bg-white/5 p-3 rounded-xl overflow-x-auto text-[13px] font-mono mb-2" {...props} />,
-                                                }}
-                                            >
+                                    <div className="flex gap-4">
+                                        <div className="w-8 h-8 rounded-full bg-accent/10 flex-shrink-0 flex items-center justify-center text-[11px] font-mono text-accent border border-accent/20 shadow-[0_0_10px_rgba(0,212,216,0.1)]">AI</div>
+                                        <div className="text-[14px] text-secondary leading-relaxed pt-1.5 prose-invert max-w-none prose-p:mb-2 prose-p:last:mb-0 prose-ul:list-disc prose-ul:ml-4 prose-ol:list-decimal prose-ol:ml-4 prose-h1:text-[16px] prose-h1:font-display prose-h1:font-bold prose-h2:text-[14px] prose-h2:font-display prose-h2:font-bold prose-code:bg-overlay prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-[4px] prose-code:font-mono prose-code:text-[12px] prose-pre:bg-overlay prose-pre:p-4 prose-pre:rounded-[8px] prose-pre:overflow-x-auto">
+                                            <ReactMarkdown>
                                                 {c.response || "..."}
                                             </ReactMarkdown>
                                         </div>
@@ -125,10 +114,10 @@ function ConversationsContent() {
                         ))}
                         
                         {convTotal > 20 && (
-                            <div className="flex justify-between items-center px-4 pt-4 opacity-50">
-                                <button disabled={convPage === 0} onClick={() => setConvPage(p => p - 1)} className="text-[10px] font-black uppercase tracking-widest hover:text-white disabled:opacity-20">Newer</button>
-                                <span className="text-[10px] font-black uppercase tracking-widest">Page {convPage + 1} of {Math.ceil(convTotal / 20)}</span>
-                                <button disabled={(convPage + 1) * 20 >= convTotal} onClick={() => setConvPage(p => p + 1)} className="text-[10px] font-black uppercase tracking-widest hover:text-white disabled:opacity-20">Older</button>
+                            <div className="flex justify-between items-center px-4 pt-4 text-tertiary">
+                                <button disabled={convPage === 0} onClick={() => setConvPage(p => p - 1)} className="text-[11px] font-mono uppercase tracking-widest hover:text-primary disabled:opacity-30 transition-colors">Newer</button>
+                                <span className="text-[11px] font-mono uppercase tracking-widest">Page {convPage + 1} of {Math.ceil(convTotal / 20)}</span>
+                                <button disabled={(convPage + 1) * 20 >= convTotal} onClick={() => setConvPage(p => p + 1)} className="text-[11px] font-mono uppercase tracking-widest hover:text-primary disabled:opacity-30 transition-colors">Older</button>
                             </div>
                         )}
                     </div>

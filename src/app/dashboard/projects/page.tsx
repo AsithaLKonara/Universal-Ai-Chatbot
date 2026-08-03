@@ -48,18 +48,28 @@ function ProjectsContent() {
                 setNewProjectName("");
                 setShowCreate(false);
                 await refreshData();
+            } else {
+                const data = await res.json().catch(() => null);
+                alert(data?.error || "Failed to authorize module.");
             }
+        } catch (e: any) {
+            alert(e.message || "Network error. Failed to authorize module.");
         } finally { setCreatingProject(false); }
     };
 
     const deleteProject = async (id: string) => {
         if (!confirm("Permanently destroy this module and all its data?")) return;
-        await fetch(`/api/user/projects?id=${id}`, { 
-            method: "DELETE", 
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } 
-        });
-        if (selectedProject?.id === id) setSelectedProject(null);
-        await refreshData();
+        try {
+            const res = await fetch(`/api/user/projects?id=${id}`, { 
+                method: "DELETE", 
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } 
+            });
+            if (!res.ok) throw new Error("Failed to decommission module.");
+            if (selectedProject?.id === id) setSelectedProject(null);
+            await refreshData();
+        } catch (e: any) {
+            alert(e.message || "Network error. Failed to decommission.");
+        }
     };
 
     return (
@@ -67,14 +77,14 @@ function ProjectsContent() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-4xl font-black uppercase tracking-tightest">Neural Nodes.</h1>
-                        <p className="text-xs font-bold opacity-30 uppercase tracking-widest mt-1">Module Identity Management</p>
+                        <h1 className="text-4xl font-display font-bold tracking-tight text-primary">Projects.</h1>
+                        <p className="text-[13px] font-mono text-tertiary uppercase tracking-widest mt-1">Workspace Nodes</p>
                     </div>
                     <button
                         onClick={() => setShowCreate(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-full font-black text-xs uppercase tracking-tighter"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-accent text-base rounded-[12px] font-semibold text-[13px] hover:brightness-110 transition-all shadow-[0_0_20px_rgba(0,212,216,0.2)]"
                     >
-                        <Plus size={14} /> New Module
+                        <Plus size={16} /> New Project
                     </button>
                 </div>
 
@@ -84,11 +94,11 @@ function ProjectsContent() {
                             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                         >
-                            <div className="p-8 rounded-[40px] border border-accent/20 bg-accent/[0.03] flex flex-col md:flex-row gap-6 items-center">
+                            <div className="p-8 rounded-[24px] border border-accent/20 bg-accent/5 flex flex-col md:flex-row gap-6 items-center mb-6">
                                 <input
                                     autoFocus
-                                    className="flex-1 bg-transparent border-b border-foreground/10 pb-2 text-xl font-black outline-none placeholder:opacity-20 uppercase tracking-tighter"
-                                    placeholder="Identity Name..."
+                                    className="flex-1 bg-transparent border-b border-border-subtle focus:border-accent pb-2 text-xl font-display font-medium text-primary outline-none placeholder:text-tertiary transition-colors"
+                                    placeholder="Project Name..."
                                     value={newProjectName}
                                     onChange={e => setNewProjectName(e.target.value)}
                                     onKeyDown={e => e.key === "Enter" && createProject()}
@@ -97,11 +107,11 @@ function ProjectsContent() {
                                     <button
                                         onClick={createProject}
                                         disabled={creatingProject || !newProjectName.trim()}
-                                        className="flex-1 md:flex-none px-8 py-3 bg-foreground text-background rounded-2xl font-black text-xs uppercase tracking-tighter disabled:opacity-40"
+                                        className="flex-1 md:flex-none px-6 py-2.5 bg-accent text-base rounded-[12px] font-semibold text-[13px] disabled:opacity-40"
                                     >
-                                        {creatingProject ? "..." : "Authorize"}
+                                        {creatingProject ? "Creating..." : "Create"}
                                     </button>
-                                    <button onClick={() => setShowCreate(false)} className="p-3 bg-foreground/5 rounded-2xl opacity-40 hover:opacity-100">
+                                    <button onClick={() => setShowCreate(false)} className="p-2.5 bg-overlay text-secondary rounded-[12px] hover:text-primary transition-colors">
                                         <X size={18} />
                                     </button>
                                 </div>
@@ -114,36 +124,36 @@ function ProjectsContent() {
                     {projects.map(p => (
                         <div key={p.id} className="space-y-3">
                             <div
-                                className={`p-6 rounded-[32px] border transition-all flex items-center justify-between group ${
-                                    selectedProject?.id === p.id ? "border-accent/40 bg-accent/[0.03]" : "border-foreground/10 hover:border-foreground/20 bg-foreground/[0.01]"
+                                className={`p-6 rounded-[24px] bg-raised border transition-all flex items-center justify-between group cursor-pointer ${
+                                    selectedProject?.id === p.id ? "border-accent/40 shadow-[0_0_30px_-10px_rgba(0,212,216,0.15)]" : "border-border-subtle hover:border-accent/20 hover:shadow-lg"
                                 }`}
+                                onClick={() => setSelectedProject(selectedProject?.id === p.id ? null : p)}
                             >
                                 <div className="flex items-center gap-5">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${selectedProject?.id === p.id ? "bg-accent text-white" : "bg-foreground/5"}`}>
+                                    <div className={`w-12 h-12 rounded-[12px] flex items-center justify-center transition-colors border ${selectedProject?.id === p.id ? "bg-accent/10 border-accent/20 text-accent" : "bg-overlay border-border-subtle text-secondary group-hover:text-accent group-hover:border-accent/20"}`}>
                                         <Globe size={20} />
                                     </div>
                                     <div>
-                                        <p className="text-base font-black uppercase tracking-tighter">{p.name}</p>
-                                        <div className="flex gap-4 items-center opacity-30 text-[10px] font-black uppercase tracking-widest mt-1">
+                                        <p className="text-[16px] font-display font-semibold text-primary">{p.name}</p>
+                                        <div className="flex gap-3 items-center text-[12px] text-tertiary font-mono mt-1">
                                             <span>{timeAgo(p.createdAt)}</span>
-                                            <div className="w-1 h-1 rounded-full bg-current" />
-                                            <span>{p.conversations} Signals</span>
+                                            <div className="w-1 h-1 rounded-full bg-border-strong" />
+                                            <span>{p.conversations} Logs</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <button 
-                                        onClick={() => router.push(`/dashboard/knowledge?projectId=${p.id}`)}
-                                        className="hidden md:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-20 hover:opacity-100 transition-opacity px-4 py-2 bg-foreground/5 rounded-xl"
+                                        onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/knowledge?projectId=${p.id}`); }}
+                                        className="hidden md:flex items-center gap-2 text-[12px] font-mono uppercase tracking-wider text-secondary hover:text-accent transition-colors px-4 py-2 bg-overlay rounded-[8px] border border-border-subtle hover:border-accent/30"
                                     >
-                                        <BookOpen size={12} /> Knowledge
+                                        <BookOpen size={14} /> Knowledge
                                     </button>
-                                    <button
-                                        onClick={() => setSelectedProject(selectedProject?.id === p.id ? null : p)}
-                                        className={`w-10 h-10 rounded-full flex items-center justify-center bg-foreground/5 transition-transform ${selectedProject?.id === p.id ? "rotate-90 text-accent" : ""}`}
+                                    <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform ${selectedProject?.id === p.id ? "rotate-90 text-accent" : "text-tertiary group-hover:text-accent"}`}
                                     >
                                         <ChevronRight size={18} />
-                                    </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -151,53 +161,55 @@ function ProjectsContent() {
                                 {selectedProject?.id === p.id && (
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.98, y: -10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: -10 }}
-                                        className="p-8 rounded-[40px] border border-foreground/10 bg-foreground/[0.02] space-y-8"
+                                        className="p-8 rounded-[24px] bg-raised border border-border-subtle mt-4 space-y-8"
                                     >
                                         <div className="grid md:grid-cols-2 gap-8">
                                             <div className="space-y-6">
                                                 <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-3 flex items-center gap-2"><Key size={12} /> Access Protocol</p>
+                                                    <p className="text-[11px] font-mono uppercase tracking-widest text-tertiary mb-3 flex items-center gap-2"><Key size={14} /> Access Protocol</p>
                                                     <div className="group relative">
-                                                        <div className="flex items-center gap-4 bg-foreground/5 rounded-2xl px-5 py-4 border border-foreground/5">
-                                                            <code className="flex-1 text-xs font-bold opacity-60 truncate font-mono">{p.apiKey}</code>
+                                                        <div className="flex items-center gap-4 bg-overlay rounded-[12px] px-4 py-3 border border-border-subtle">
+                                                            <code className="flex-1 text-[13px] text-secondary truncate font-mono">{p.apiKey}</code>
                                                             <button onClick={() => {
                                                                 navigator.clipboard.writeText(p.apiKey);
                                                                 alert("API Key copied to clipboard");
-                                                            }} className="hover:text-accent transition-colors">
+                                                            }} className="text-tertiary hover:text-accent transition-colors">
                                                                 <Copy size={16} />
                                                             </button>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">Integration Metrics</p>
+                                                    <p className="text-[11px] font-mono uppercase tracking-widest text-tertiary">Integration Metrics</p>
                                                     <div className="flex gap-4">
-                                                        <div className="flex-1 p-5 rounded-2xl bg-foreground/5 text-center">
-                                                            <div className="text-xl font-black">{fmt(p.tokens)}</div>
-                                                            <div className="text-[9px] font-black uppercase tracking-widest opacity-30 mt-1">Processed</div>
+                                                        <div className="flex-1 p-4 rounded-[16px] bg-overlay border border-border-subtle text-center">
+                                                            <div className="text-2xl font-display font-semibold text-primary">{fmt(p.tokens)}</div>
+                                                            <div className="text-[11px] font-mono text-tertiary uppercase tracking-widest mt-1">Processed</div>
                                                         </div>
-                                                        <div className="flex-1 p-5 rounded-2xl bg-foreground/5 text-center">
-                                                            <div className="text-xl font-black">{p.conversations}</div>
-                                                            <div className="text-[9px] font-black uppercase tracking-widest opacity-30 mt-1">Successful</div>
+                                                        <div className="flex-1 p-4 rounded-[16px] bg-overlay border border-border-subtle text-center">
+                                                            <div className="text-2xl font-display font-semibold text-primary">{p.conversations}</div>
+                                                            <div className="text-[11px] font-mono text-tertiary uppercase tracking-widest mt-1">Successful</div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="space-y-4">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">Live Implementation</p>
-                                                <CodeBlock lang="js" code={`fetch("/api/v1/chat", {\n  method: "POST",\n  headers: { "x-api-key": "${p.apiKey}" },\n  body: JSON.stringify({ messages: [] })\n})`} />
+                                                <p className="text-[11px] font-mono uppercase tracking-widest text-tertiary">Live Implementation</p>
+                                                <div className="rounded-[16px] overflow-hidden border border-border-subtle">
+                                                    <CodeBlock lang="js" code={`fetch("/api/v1/chat", {\n  method: "POST",\n  headers: { "x-api-key": "${p.apiKey}" },\n  body: JSON.stringify({ messages: [] })\n})`} />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between items-center pt-6 border-t border-foreground/5">
+                                        <div className="flex justify-between items-center pt-6 border-t border-border-subtle">
                                             <div className="flex gap-6">
-                                                <button onClick={() => router.push(`/dashboard/conversations?projectId=${p.id}`)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 hover:text-accent transition-all">
+                                                <button onClick={() => router.push(`/dashboard/conversations?projectId=${p.id}`)} className="flex items-center gap-2 text-[12px] font-mono uppercase tracking-widest text-secondary hover:text-accent transition-colors">
                                                     <MessageSquare size={14} /> Full Logs
                                                 </button>
-                                                <button onClick={() => router.push(`/dashboard/knowledge?projectId=${p.id}`)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 hover:text-accent transition-all">
+                                                <button onClick={() => router.push(`/dashboard/knowledge?projectId=${p.id}`)} className="flex items-center gap-2 text-[12px] font-mono uppercase tracking-widest text-secondary hover:text-accent transition-colors">
                                                     <BookOpen size={14} /> Knowledge Node
                                                 </button>
                                             </div>
-                                            <button onClick={() => deleteProject(p.id)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-20 hover:opacity-100 hover:text-red-500 transition-all">
+                                            <button onClick={() => deleteProject(p.id)} className="flex items-center gap-2 text-[12px] font-mono uppercase tracking-widest text-tertiary hover:text-error transition-colors">
                                                 <Trash2 size={14} /> Decommission
                                             </button>
                                         </div>

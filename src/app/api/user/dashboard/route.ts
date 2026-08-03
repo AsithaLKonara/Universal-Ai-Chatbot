@@ -28,26 +28,35 @@ export async function GET(req: Request) {
         }
 
         const projects = await prisma.project.findMany({
-            where: { userId },
+            where: { 
+                OR: [
+                    { userId },
+                    { members: { some: { userId } } }
+                ]
+            },
             include: {
                 usage: { select: { tokens: true } },
                 _count: { select: { conversations: true } },
+                members: { where: { userId }, select: { role: true } }
             },
             orderBy: { createdAt: "desc" },
         });
 
-        const projectsWithStats = await Promise.all(projects.map(async (p) => {
+        const projectsWithStats = [];
+        for (const p of projects) {
             const commerce = await AnalyticsService.getProjectStats(p.id);
-            return {
+            const projectRole = p.userId === userId ? "OWNER" : (p.members[0]?.role || "VIEWER");
+            projectsWithStats.push({
                 id: p.id,
                 name: p.name,
                 apiKey: p.apiKey,
+                projectRole,
                 conversations: p._count.conversations,
                 tokens: p.usage.reduce((sum, u) => sum + u.tokens, 0),
                 createdAt: p.createdAt,
                 commerce
-            };
-        }));
+            });
+        }
 
         const allUsage = await prisma.usage.findMany({
             where: { project: { userId } },
