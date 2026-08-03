@@ -1,11 +1,13 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
+import { MotionValue } from "framer-motion";
 
 interface CanvasSequenceOptions {
   frameCount: number;
   getFrameUrl: (index: number) => string;
   lerpScroll?: number;
   lerpFrame?: number;
+  progress?: MotionValue<number>;
 }
 
 /**
@@ -24,6 +26,7 @@ export function useCanvasSequence(
     getFrameUrl,
     lerpScroll = 0.05,
     lerpFrame = 0.12,
+    progress,
   }: CanvasSequenceOptions
 ) {
   const images = useRef<HTMLImageElement[]>([]);
@@ -103,6 +106,7 @@ export function useCanvasSequence(
     resizeCanvas(); // Initial execution
 
     // 3. Scroll Listener
+    let unsubscribeProgress: () => void;
     const onScroll = () => {
       const scrollTop = window.scrollY;
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -111,7 +115,13 @@ export function useCanvasSequence(
       }
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (progress) {
+      unsubscribeProgress = progress.on("change", (latest) => {
+        targetProgress.current = Math.min(Math.max(latest, 0), 1);
+      });
+    } else {
+      window.addEventListener("scroll", onScroll, { passive: true });
+    }
 
     // 4. Master Animation Loop (GSAP Ticker)
     const render = () => {
@@ -149,9 +159,10 @@ export function useCanvasSequence(
     return () => {
       gsap.ticker.remove(render);
       window.removeEventListener("resize", onResize);
-      window.removeEventListener("scroll", onScroll);
+      if (unsubscribeProgress) unsubscribeProgress();
+      else window.removeEventListener("scroll", onScroll);
       clearTimeout(resizeTimer);
     };
-  }, [canvasRef, frameCount, getFrameUrl, lerpScroll, lerpFrame]);
+  }, [canvasRef, frameCount, getFrameUrl, lerpScroll, lerpFrame, progress]);
 }
 
